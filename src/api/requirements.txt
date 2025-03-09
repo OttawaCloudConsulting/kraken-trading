@@ -1,0 +1,4 @@
+requests==2.31.0
+ccxt==4.4.65
+pymongo==4.11.2
+python-dotenv==1.0.1
