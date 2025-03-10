@@ -11,10 +11,11 @@ def _ensure_output_directory() -> None:
     """Ensures that the 'outputs/' directory exists."""
     os.makedirs("outputs", exist_ok=True)
 
-def _generate_filename(extension: str, custom_filename: Optional[str] = None) -> str:
+def _generate_filename(file_type: str, extension: str, custom_filename: Optional[str] = None) -> str:
     """Generates a timestamped filename or uses a custom one.
     
     Args:
+        file_type: Type of file ('trades' or 'rewards').
         extension: The file extension (json, csv, etc.).
         custom_filename: Optional custom filename.
 
@@ -23,8 +24,8 @@ def _generate_filename(extension: str, custom_filename: Optional[str] = None) ->
     """
     timestamp = int(time.time())
     if custom_filename:
-        return f"outputs/{custom_filename}.{extension}"
-    return f"outputs/my_trades_{timestamp}.{extension}"
+        return f"outputs/{custom_filename}_{file_type}.{extension}"
+    return f"outputs/{file_type}_{timestamp}.{extension}"
 
 # Predefined trade fields based on Kraken's API schema
 ALL_TRADE_FIELDS = [
@@ -61,7 +62,7 @@ def _save_to_local(data: Dict, format: str, filename: str, logger: logging.Logge
             logger.info(f"✅ JSON file saved: {filename} (Size: {file_size:.2f} KB)")
         
         elif format == "csv":
-            field_list = ALL_STAKING_FIELDS if "staking_rewards" in filename else ALL_TRADE_FIELDS
+            field_list = ALL_STAKING_FIELDS if "rewards" in filename else ALL_TRADE_FIELDS
             data_list = [
                 {**entry, "ledger_id": key} for key, entry in data.items()
                 if isinstance(entry, dict)
@@ -98,7 +99,7 @@ def save_trades(trades: Dict, format: str, location: str, logger: logging.Logger
         filename: Optional custom filename.
     """
     if location == "local":
-        file_path = _generate_filename(format, filename)
+        file_path = _generate_filename("trades", format, filename)
         _save_to_local(trades, format, file_path, logger)
     else:
         logger.error(f"❌ Unsupported storage location: {location}")
@@ -114,7 +115,7 @@ def save_staking_rewards(staking_data: Dict, format: str, location: str, logger:
         filename: Optional custom filename.
     """
     if location == "local":
-        file_path = _generate_filename(format, filename)
+        file_path = _generate_filename("rewards", format, filename)
         _save_to_local(staking_data, format, file_path, logger)
     else:
         logger.error(f"❌ Unsupported storage location: {location}")
