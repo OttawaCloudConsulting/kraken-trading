@@ -1,4 +1,4 @@
-"""Data Handler for saving trade history to local storage in JSON and CSV formats."""
+"""Data Handler for saving trade history and staking rewards to local storage in JSON and CSV formats."""
 
 import os
 import json
@@ -33,61 +33,51 @@ ALL_TRADE_FIELDS = [
     "ledgers", "maker", "posstatus", "cprice"
 ]
 
-def _save_to_local(trades: Dict, format: str, filename: str, logger: logging.Logger) -> None:
-    """Saves trade data locally as JSON or CSV.
+# Predefined staking rewards fields based on Kraken's API schema (via ledger entries)
+ALL_STAKING_FIELDS = [
+    "ledger_id", "refid", "time", "asset", "amount", "balance"
+]
+
+def _save_to_local(data: Dict, format: str, filename: str, logger: logging.Logger) -> None:
+    """Saves trade history or staking rewards locally as JSON or CSV.
     
     Args:
-        trades: The trade data to save.
+        data: The data to save (trade history or staking rewards).
         format: The output format ('json' or 'csv').
         filename: The filename to save the data.
         logger: Logger instance for logging messages.
     """
     _ensure_output_directory()
     
-    if not trades or "trades" not in trades:
-        logger.error("❌ No valid trade data found in API response. File will not be created.")
+    if not data:
+        logger.error("❌ No data to save. File will not be created.")
         return
 
-    trade_entries = trades["trades"]  # Extract only the trades dictionary
-    
     try:
         if format == "json":
             with open(filename, "w", encoding="utf-8") as file:
-                json.dump(trade_entries, file, indent=4)
+                json.dump(data, file, indent=4)
             file_size = os.path.getsize(filename) / 1024  # Convert bytes to KB
             logger.info(f"✅ JSON file saved: {filename} (Size: {file_size:.2f} KB)")
         
         elif format == "csv":
-            # Convert trade dictionary to list of trade entries, ensuring trade_id is included
-            trade_list = [
-                {**trade, "trade_id": trade_id} for trade_id, trade in trade_entries.items() if isinstance(trade, dict)
+            field_list = ALL_STAKING_FIELDS if "staking_rewards" in filename else ALL_TRADE_FIELDS
+            data_list = [
+                {**entry, "ledger_id": key} for key, entry in data.items()
+                if isinstance(entry, dict)
             ]
             
-            if not trade_list:
-                logger.error("❌ No valid trade records found for CSV export.")
+            if not data_list:
+                logger.error("❌ No valid records found for CSV export.")
                 return
-            
-            if len(trade_list) != len(trade_entries):
-                logger.warning("⚠️ Some trade entries were not dictionaries and were skipped.")
             
             with open(filename, "w", newline="", encoding="utf-8") as file:
                 writer = csv.writer(file)
-                writer.writerow(ALL_TRADE_FIELDS)
+                writer.writerow(field_list)
                 
-                for trade in trade_list:
-                    # Convert list fields to comma-separated strings for CSV
-                    for key, value in trade.items():
-                        if isinstance(value, list):
-                            trade[key] = ",".join(map(str, value))
-                    
-                    # Ensure all expected fields are present, fill missing fields with empty strings
-                    row_data = [trade.get(field, "") for field in ALL_TRADE_FIELDS]
+                for entry in data_list:
+                    row_data = [entry.get(field, "") for field in field_list]
                     writer.writerow(row_data)
-                    
-                    # Log warnings for missing fields
-                    missing_fields = [field for field in ALL_TRADE_FIELDS if field not in trade]
-                    if missing_fields:
-                        logger.warning(f"⚠️ Trade {trade['trade_id']} is missing fields: {missing_fields}")
             
             file_size = os.path.getsize(filename) / 1024
             logger.info(f"✅ CSV file saved: {filename} (Size: {file_size:.2f} KB)")
@@ -98,7 +88,7 @@ def _save_to_local(trades: Dict, format: str, filename: str, logger: logging.Log
         logger.error(f"❌ Failed to save file: {filename}. Error: {error}")
 
 def save_trades(trades: Dict, format: str, location: str, logger: logging.Logger, filename: Optional[str] = None) -> None:
-    """Handles saving trade data to the specified location and format.
+    """Handles saving trade history to the specified location and format.
     
     Args:
         trades: The trade data retrieved from Kraken.
@@ -110,5 +100,21 @@ def save_trades(trades: Dict, format: str, location: str, logger: logging.Logger
     if location == "local":
         file_path = _generate_filename(format, filename)
         _save_to_local(trades, format, file_path, logger)
+    else:
+        logger.error(f"❌ Unsupported storage location: {location}")
+
+def save_staking_rewards(staking_data: Dict, format: str, location: str, logger: logging.Logger, filename: Optional[str] = None) -> None:
+    """Handles saving staking rewards (via ledger entries) to the specified location and format.
+    
+    Args:
+        staking_data: The staking rewards data retrieved from Kraken's ledger.
+        format: The output format ('json' or 'csv').
+        location: The storage location ('local').
+        logger: Logger instance for logging messages.
+        filename: Optional custom filename.
+    """
+    if location == "local":
+        file_path = _generate_filename(format, filename)
+        _save_to_local(staking_data, format, file_path, logger)
     else:
         logger.error(f"❌ Unsupported storage location: {location}")
