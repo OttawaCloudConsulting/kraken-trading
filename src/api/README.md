@@ -2,37 +2,16 @@
 
 ## Table of Contents
 
-- [Kraken Trade History Retrieval](#kraken-trade-history-retrieval)
-  - [Table of Contents](#table-of-contents)
-  - [📌 Overview](#-overview)
-  - [🚀 Features](#-features)
-  - [🏗️ Architecture Overview](#️-architecture-overview)
-  - [🛠️ Installation](#️-installation)
-    - [Requirements](#requirements)
-    - [Setup Instructions](#setup-instructions)
-  - [📄 Usage Instructions](#-usage-instructions)
-    - [Run the Script](#run-the-script)
-    - [Configure Logging Level](#configure-logging-level)
-    - [Customize Filename](#customize-filename)
-  - [🔗 API Integration](#-api-integration)
-  - [🛠️ Function \& Purpose Table](#️-function--purpose-table)
-  - [📂 Example Logs \& Output](#-example-logs--output)
-    - [Example Log Output](#example-log-output)
-    - [Example JSON Output](#example-json-output)
-    - [Example CSV Output](#example-csv-output)
-  - [🧪 Testing](#-testing)
-  - [🔧 Troubleshooting](#-troubleshooting)
-    - [Invalid API Key](#invalid-api-key)
-    - [No Trades Found](#no-trades-found)
-  - [📅 Future Roadmap](#-future-roadmap)
+[TOC]
 
 ## 📌 Overview
 
-This Python application retrieves historical trade data from the Kraken exchange, saves it locally in **JSON** and **CSV** formats, and provides structured logging for debugging and analysis.
+This Python application retrieves **trade history** and **staking rewards**  data from the Kraken exchange, saves it locally in **JSON** and **CSV** formats, and provides structured logging for debugging and analysis.
 
 ## 🚀 Features
 
 - Fetches **all historical trade data** from Kraken.
+- Retrieve **staking rewards** (excluding fund transfers) via Kraken's ledger entries.
 - Saves trade data in **JSON** and **CSV** formats.
 - Implements **structured logging**.
 - Supports **custom filenames** for exports.
@@ -41,16 +20,18 @@ This Python application retrieves historical trade data from the Kraken exchange
 
 ## 🏗️ Architecture Overview
 
-The following diagram illustrates the application's data flow:
+This application follows a structured process for retrieving, processing, and storing trade history and staking rewards.
 
 ```mermaid
 graph TD;
-    User -->|Runs main.py| KrakenAPIClient;
-    KrakenAPIClient -->|Fetches trades| KrakenAPI;
-    KrakenAPI -->|Returns trade history| KrakenAPIClient;
-    KrakenAPIClient -->|Processes data| DataHandler;
-    DataHandler -->|Saves JSON| JSONFile["Local JSON File"];
-    DataHandler -->|Saves CSV| CSVFile["Local CSV File"];
+    A[Trigger] -->|Execute Application| B["Main Script (main.py)"];
+    B -->|API Handler| C["API Script (class KrakenAPIClient)"] ;
+    C -->|Fetch Trades| D["Kraken API - TradesHistory (def get_trade_history)"];
+    C -->|Fetch Staking Rewards| E["Kraken API - Ledgers (def get_staking_rewards)"];
+    D -->|Return Trade Data| F[Process Trades];
+    E -->|Return Staking Rewards| F["Process Returned Data (data_handler.py)"];
+    F -->|Save to File| G["Trade Data JSON/CSV (def save_trades)"];
+    F -->|Save to File| H["Reward Data JSON/CSV (def save_staking_rewards)"];
 ```
 
 ## 🛠️ Installation
@@ -58,7 +39,11 @@ graph TD;
 ### Requirements
 
 - Python **3.11**
-- Required Python packages: `requests`, `python-dotenv`
+- Required Python packages:
+  - `requests`
+  - `python-dotenv`
+  - `ccxt`
+  - `pymongo`
 
 ### Setup Instructions
 
@@ -99,19 +84,21 @@ graph TD;
 python main.py
 ```
 
-### Configure Logging Level
+## Logging & Debugging
 
-Set the `LOG_LEVEL` environment variable:
-
-```sh
-export LOG_LEVEL=DEBUG  # Options: DEBUG, INFO, WARNING, ERROR
-```
+- Set logging level via `LOG_LEVEL` in `.env`.
+- Logs provide information on:
+  - API requests & responses.
+  - Number of trades and staking rewards retrieved.
+  - File creation success or failure.
 
 ### Customize Filename
 
 Pass a custom filename when saving trade history (default is `my_trades_<timestamp>.json` / `.csv`).
 
 ## 🔗 API Integration
+
+### TradesHistory
 
 - Uses **Kraken Private API** (`/0/private/TradesHistory`)
 - Requires **API Key & Secret** authentication.
@@ -138,6 +125,30 @@ Pass a custom filename when saving trade history (default is `my_trades_<timesta
   }
   ```
 
+### Ledgers
+
+- Retrieves **ledger entries**, which include **staking rewards**.
+- We filter the results to **only include `type=staking` and `subtype=""`**, excluding staking transfers.
+- This ensures **we do not include staking deposits (`spottostaking`) or withdrawals (`stakingtospot`)**.
+- **Response Format:**
+
+  ```json
+  "error": [],
+  "result": {
+    "ledger": {
+      "L12345": {
+        "refid": "RABC1234",
+        "time": 1645231234,
+        "type": "staking",
+        "subtype": "",
+        "asset": "ETH2.S",
+        "amount": "0.02",
+        "balance": "1.5"
+      }
+    }
+  }
+  ```
+
 ## 🛠️ Function & Purpose Table
 
 | **Function** | **Purpose** |
@@ -145,6 +156,7 @@ Pass a custom filename when saving trade history (default is `my_trades_<timesta
 | `KrakenAPIClient.get_trade_history()` | Fetches historical trades from Kraken. |
 | `save_trades(trades, format, location, logger, filename)` | Saves trade data to JSON or CSV. |
 | `_save_to_local(trades, format, filename, logger)` | Handles local file storage. |
+| `save_staking_rewards()` | Saves staking rewards to JSON/CSV files. |
 | `_generate_filename(extension, custom_filename)` | Generates timestamped filenames. |
 | `_ensure_output_directory()` | Creates the `outputs/` directory. |
 
@@ -161,17 +173,34 @@ Pass a custom filename when saving trade history (default is `my_trades_<timesta
 
 ### Example JSON Output
 
+### **Trade History (JSON)**
+
 ```json
 {
-  "TXID123": {
-    "ordertxid": "O123",
-    "pair": "BTC/USD",
-    "time": 1700000000,
+  "TX12345": {
+    "ordertxid": "OABC1234",
+    "pair": "ETH/USD",
+    "time": 1645231234,
     "type": "buy",
-    "price": "50000.00",
-    "cost": "1000.00",
-    "fee": "2.00",
-    "vol": "0.02"
+    "ordertype": "limit",
+    "price": "2500.00",
+    "cost": "5000.00",
+    "fee": "5.00",
+    "vol": "2.0"
+  }
+}
+```
+
+### **Staking Rewards (JSON)**
+
+```json
+{
+  "L12345": {
+    "refid": "RABC1234",
+    "time": 1645231234,
+    "asset": "ETH2.S",
+    "amount": "0.02",
+    "balance": "1.5"
   }
 }
 ```
