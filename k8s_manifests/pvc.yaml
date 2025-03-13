@@ -1,0 +1,53 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: reports-pvc
+  namespace: app-namespace
+  labels:
+    app.kubernetes.io/name: reports-pvc
+    app.kubernetes.io/part-of: my-application
+    app.kubernetes.io/managed-by: kubectl
+    app.kubernetes.io/component: storage
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: longhorn
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: logs-pvc
+  namespace: app-namespace
+  labels:
+    app.kubernetes.io/name: logs-pvc
+    app.kubernetes.io/part-of: my-application
+    app.kubernetes.io/managed-by: kubectl
+    app.kubernetes.io/component: storage
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: longhorn
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mongodb-pvc
+  namespace: app-namespace
+  labels:
+    app.kubernetes.io/name: mongodb-pvc
+    app.kubernetes.io/part-of: my-application
+    app.kubernetes.io/managed-by: kubectl
+    app.kubernetes.io/component: storage
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: longhorn

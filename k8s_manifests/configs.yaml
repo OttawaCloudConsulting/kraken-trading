@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: app-secrets
+  namespace: app-namespace
+  labels:
+    app.kubernetes.io/name: app-secrets
+    app.kubernetes.io/part-of: my-application
+    app.kubernetes.io/managed-by: kubectl
+    app.kubernetes.io/component: secret
+stringData:
+  mongodb-username: "admin"
+  mongodb-password: "supersecurepassword"
+  external-api-token: "your-api-token"
+type: Opaque
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: app-namespace
+  labels:
+    app.kubernetes.io/name: app-config
+    app.kubernetes.io/part-of: my-application
+    app.kubernetes.io/managed-by: kubectl
+    app.kubernetes.io/component: configmap
+data:
+  APP_ENV: "production"
+  LOG_LEVEL: "info"
+  MONGO_URI: "mongodb://$(mongodb-username):$(mongodb-password)@mongodb-service:27017/app-db"
+  REPORTS_STORAGE_PATH: "/mnt/reports"
+  LOGS_STORAGE_PATH: "/mnt/logs"

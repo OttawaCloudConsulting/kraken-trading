@@ -1,0 +1,163 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flask-app
+  namespace: app-namespace
+  labels:
+    app.kubernetes.io/name: flask-app
+    app.kubernetes.io/part-of: my-application
+    app.kubernetes.io/managed-by: kubectl
+    app.kubernetes.io/component: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: flask-app
+  template:
+    metadata:
+      labels:
+        app: flask-app
+    spec:
+      serviceAccountName: app-service-account
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+        - name: flask-app
+          image: myregistry.com/my-flask-app:latest
+          ports:
+            - containerPort: 5000
+          envFrom:
+            - configMapRef:
+                name: app-config
+            - secretRef:
+                name: app-secrets
+          volumeMounts:
+            - name: reports-storage
+              mountPath: /mnt/reports
+            - name: logs-storage
+              mountPath: /mnt/logs
+          resources:
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 5000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 5000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+      volumes:
+        - name: reports-storage
+          persistentVolumeClaim:
+            claimName: reports-pvc
+        - name: logs-storage
+          persistentVolumeClaim:
+            claimName: logs-pvc
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mongodb
+  namespace: app-namespace
+  labels:
+    app.kubernetes.io/name: mongodb
+    app.kubernetes.io/part-of: my-application
+    app.kubernetes.io/managed-by: kubectl
+    app.kubernetes.io/component: database
+spec:
+  serviceName: mongodb-service
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mongodb
+  template:
+    metadata:
+      labels:
+        app: mongodb
+    spec:
+      containers:
+        - name: mongodb
+          image: mongo:latest
+          ports:
+            - containerPort: 27017
+          envFrom:
+            - secretRef:
+                name: app-secrets
+          volumeMounts:
+            - name: mongodb-storage
+              mountPath: /data/db
+          resources:
+            limits:
+              memory: "1Gi"
+              cpu: "1000m"
+            requests:
+              memory: "512Mi"
+              cpu: "500m"
+          livenessProbe:
+            exec:
+              command:
+                - mongosh
+                - --eval
+                - "db.adminCommand('ping')"
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            exec:
+              command:
+                - mongosh
+                - --eval
+                - "db.adminCommand('ping')"
+            initialDelaySeconds: 5
+            periodSeconds: 10
+      volumes:
+        - name: mongodb-storage
+          persistentVolumeClaim:
+            claimName: mongodb-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: flask-service
+  namespace: app-namespace
+  labels:
+    app.kubernetes.io/name: flask-service
+    app.kubernetes.io/part-of: my-application
+    app.kubernetes.io/managed-by: kubectl
+    app.kubernetes.io/component: service
+spec:
+  type: ClusterIP
+  selector:
+    app: flask-app
+  ports:
+    - protocol: TCP
+      port: 5000
+      targetPort: 5000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongodb-service
+  namespace: app-namespace
+  labels:
+    app.kubernetes.io/name: mongodb-service
+    app.kubernetes.io/part-of: my-application
+    app.kubernetes.io/managed-by: kubectl
+    app.kubernetes.io/component: service
+spec:
+  type: ClusterIP
+  selector:
+    app: mongodb
+  ports:
+    - protocol: TCP
+      port: 27017
+      targetPort: 27017
