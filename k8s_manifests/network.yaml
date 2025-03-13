@@ -2,12 +2,8 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-flask-to-mongodb
-  namespace: app-namespace
   labels:
-    app.kubernetes.io/name: allow-flask-to-mongodb
-    app.kubernetes.io/part-of: my-application
-    app.kubernetes.io/managed-by: kubectl
-    app.kubernetes.io/component: network-policy
+    app.kubernetes.io/component: networking
 spec:
   podSelector:
     matchLabels:
@@ -27,12 +23,8 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: restrict-mongodb-external-access
-  namespace: app-namespace
   labels:
-    app.kubernetes.io/name: restrict-mongodb-external-access
-    app.kubernetes.io/part-of: my-application
-    app.kubernetes.io/managed-by: kubectl
-    app.kubernetes.io/component: network-policy
+    app.kubernetes.io/component: networking
 spec:
   podSelector:
     matchLabels:
@@ -45,12 +37,8 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-ingress-flask
-  namespace: app-namespace
   labels:
-    app.kubernetes.io/name: allow-ingress-flask
-    app.kubernetes.io/part-of: my-application
-    app.kubernetes.io/managed-by: kubectl
-    app.kubernetes.io/component: network-policy
+    app.kubernetes.io/component: networking
 spec:
   podSelector:
     matchLabels:

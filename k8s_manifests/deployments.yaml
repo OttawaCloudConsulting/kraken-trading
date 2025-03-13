@@ -2,11 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: flask-app
-  namespace: app-namespace
   labels:
-    app.kubernetes.io/name: flask-app
-    app.kubernetes.io/part-of: my-application
-    app.kubernetes.io/managed-by: kubectl
     app.kubernetes.io/component: backend
 spec:
   replicas: 1
@@ -68,12 +64,8 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: mongodb
-  namespace: app-namespace
   labels:
-    app.kubernetes.io/name: mongodb
-    app.kubernetes.io/part-of: my-application
-    app.kubernetes.io/managed-by: kubectl
-    app.kubernetes.io/component: database
+    app.kubernetes.io/component: backend
 spec:
   serviceName: mongodb-service
   replicas: 1
@@ -128,12 +120,8 @@ apiVersion: v1
 kind: Service
 metadata:
   name: flask-service
-  namespace: app-namespace
   labels:
-    app.kubernetes.io/name: flask-service
-    app.kubernetes.io/part-of: my-application
-    app.kubernetes.io/managed-by: kubectl
-    app.kubernetes.io/component: service
+    app.kubernetes.io/component: backend
 spec:
   type: ClusterIP
   selector:
@@ -147,12 +135,8 @@ apiVersion: v1
 kind: Service
 metadata:
   name: mongodb-service
-  namespace: app-namespace
   labels:
-    app.kubernetes.io/name: mongodb-service
-    app.kubernetes.io/part-of: my-application
-    app.kubernetes.io/managed-by: kubectl
-    app.kubernetes.io/component: service
+    app.kubernetes.io/component: backend
 spec:
   type: ClusterIP
   selector:

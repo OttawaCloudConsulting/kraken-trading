@@ -2,11 +2,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: flask-ingress
-  namespace: app-namespace
   labels:
-    app.kubernetes.io/name: flask-ingress
-    app.kubernetes.io/part-of: my-application
-    app.kubernetes.io/managed-by: kubectl
     app.kubernetes.io/component: ingress
   annotations:
     kubernetes.io/ingress.class: nginx
@@ -14,10 +10,10 @@ metadata:
 spec:
   tls:
     - hosts:
-        - myapp.example.com
+        - kraken-tracker.home.ottawacloudconsulting.com
       secretName: flask-tls-secret
   rules:
-    - host: myapp.example.com
+    - host: kraken-tracker.home.ottawacloudconsulting.com
       http:
         paths:
           - path: /
