@@ -14,3 +14,4 @@ commonAnnotations:
 
 resources:
 - rbac.yaml
+- pvc.yaml
