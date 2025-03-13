@@ -1,19 +1,7 @@
 apiVersion: v1
-kind: Namespace
-metadata:
-  name: app-namespace
-  labels:
-    environment: production
-    app.kubernetes.io/name: app-namespace
-    app.kubernetes.io/part-of: my-application
-    app.kubernetes.io/managed-by: kubectl
-    app.kubernetes.io/component: namespace
----
-apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: app-service-account
-  namespace: app-namespace
   labels:
     app.kubernetes.io/name: app-service-account
     app.kubernetes.io/part-of: my-application
@@ -24,7 +12,6 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: app-role
-  namespace: app-namespace
   labels:
     app.kubernetes.io/name: app-role
     app.kubernetes.io/part-of: my-application
@@ -45,7 +32,6 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: app-rolebinding
-  namespace: app-namespace
   labels:
     app.kubernetes.io/name: app-rolebinding
     app.kubernetes.io/part-of: my-application
@@ -54,7 +40,6 @@ metadata:
 subjects:
   - kind: ServiceAccount
     name: app-service-account
-    namespace: app-namespace
 roleRef:
   kind: Role
   name: app-role
