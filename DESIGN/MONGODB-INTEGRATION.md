@@ -4,12 +4,12 @@
 
 ## 📌 Overview
 
-This document outlines the design and implementation strategy for integrating **MongoDB** into the Kraken Trade & Staking Rewards retrieval application. The integration will allow structured storage of trade history and staking rewards while enabling **incremental data retrieval** based on the last stored timestamp.
+This document outlines the design and implementation strategy for integrating **MongoDB** into the Kraken Trade & Staking Rewards retrieval application. The integration will allow structured storage of trade history and staking rewards while enabling **incremental data retrieval** based on the last stored timestamps.
 
 ## 🎯 Goals
 
 - **Store structured trade & staking rewards data** in MongoDB.
-- **Retrieve only new data** since the last recorded timestamp.
+- **Retrieve only new data** since the last recorded timestamps.
 - **Ensure data integrity** by avoiding duplicate entries.
 - **Future-proof the schema** for potential expansion.
 
@@ -19,11 +19,15 @@ This integration introduces MongoDB as the **primary storage backend** for trade
 
 ```mermaid
 graph TD;
-    A["Main Script (main.py)"] -->|Query MongoDB| B["MongoDB - Last Retrieval Timestamp"];
-    B -->|Fetch Only New Data| C["API Client (get_trade_history & get_staking_rewards)"];
-    C -->|Return New Data| D["Process Data"];
-    D -->|Store in MongoDB| E["kraken_trades & kraken_rewards Collections"];
-    E -->|Update Last Timestamp| F["kraken_metadata Collection"];
+    A["Main Script (main.py)"] -->|Query MongoDB| B["MongoDB - Last Retrieval Timestamps"];
+    B -->|Fetch New Trades| C["API Client (get_trade_history)"];
+    B -->|Fetch New Rewards| D["API Client (get_staking_rewards)"];
+    C -->|Return New Trades| E["Process Trade Data"];
+    D -->|Return New Rewards| F["Process Staking Rewards Data"];
+    E -->|Store in MongoDB| G["kraken_trades Collection"];
+    F -->|Store in MongoDB| H["kraken_rewards Collection"];
+    G -->|Update Trade Timestamp| I["kraken_metadata Collection (last_trade_timestamp)"];
+    H -->|Update Reward Timestamp| J["kraken_metadata Collection (last_reward_timestamp)"];
 ```
 
 ## 🗃️ MongoDB Schema & Collections
@@ -57,7 +61,7 @@ To support structured storage and efficient querying, three MongoDB collections 
 | `amount` | `Decimal` | Staking reward amount |
 | `balance` | `Decimal` | Post-reward balance |
 
-### **3️⃣ `kraken_metadata` (Stores Last Retrieval Timestamp)**
+### **3️⃣ `kraken_metadata` (Stores Last Retrieval Timestamps)**
 
 | Field | Type | Description |
 |--------|--------|-------------|
@@ -67,7 +71,7 @@ To support structured storage and efficient querying, three MongoDB collections 
 
 ## 🔄 Incremental Data Retrieval Strategy
 
-Instead of fetching all available data every time, we will use **incremental data retrieval** based on the last stored timestamp.
+Instead of fetching all available data every time, we will use **incremental data retrieval** based on the last stored timestamps.
 
 ### **Retrieval Process:**
 
@@ -78,10 +82,14 @@ Instead of fetching all available data every time, we will use **incremental dat
 
 ```mermaid
 graph TD;
-    A[Retrieve Last Timestamp from MongoDB] -->|Fetch Only New Data| B[Kraken API - Trades & Ledgers];
-    B -->|Return Only New Data| C[Process Data];
-    C -->|Insert into MongoDB| D[kraken_trades & kraken_rewards];
-    D -->|Update Last Timestamp| E[kraken_metadata];
+    A["Retrieve Last Timestamps from MongoDB"] -->|Fetch Only New Trades| B["Kraken API - TradesHistory"];
+    A -->|Fetch Only New Rewards| C["Kraken API - Ledgers"];
+    B -->|Return Only New Trades| D["Process Trade Data"];
+    C -->|Return Only New Rewards| E["Process Staking Rewards Data"];
+    D -->|Insert into MongoDB| F["kraken_trades Collection"];
+    E -->|Insert into MongoDB| G["kraken_rewards Collection"];
+    F -->|Update Trade Timestamp| H["kraken_metadata Collection (last_trade_timestamp)"];
+    G -->|Update Reward Timestamp| I["kraken_metadata Collection (last_reward_timestamp)"];
 ```
 
 ## 🛠️ Design Decisions
@@ -91,17 +99,22 @@ graph TD;
 - **Decision:** MongoDB will only store **structured trade and reward data** (no raw API responses).
 - **Reason:** Ensures efficient queries, storage optimization, and easier data processing.
 
-### **2️⃣ No Manual Timestamp Overrides**
+### **2️⃣ Use Separate Timestamps for Trades & Rewards**
 
-- **Decision:** The **last retrieval timestamp** will always come from MongoDB.
+- **Decision:** Each retrieval function (`get_trade_history()` and `get_staking_rewards()`) will track its own timestamp.
+- **Reason:** Ensures that **one API failure does not block the other retrieval process**, preventing data loss.
+
+### **3️⃣ No Manual Timestamp Overrides**
+
+- **Decision:** The **last retrieval timestamps** will always come from MongoDB.
 - **Reason:** Prevents accidental overwrites and ensures consistent data tracking.
 
-### **3️⃣ Exit on Errors During Development**
+### **4️⃣ Exit on Errors During Development**
 
 - **Decision:** The script will **exit on API failures** (instead of retrying) for now.
 - **Reason:** Simplifies debugging; retry logic can be added later.
 
-### **4️⃣ Future-Proofing the Database**
+### **5️⃣ Future-Proofing the Database**
 
 - **Decision:** Design MongoDB schema with **expandability in mind**.
 - **Reason:** Allows easy **integration of additional Kraken API endpoints** in future iterations.
@@ -109,7 +122,7 @@ graph TD;
 ## 🚀 Next Steps
 
 1️⃣ **Implement MongoDB connection & schema setup**.  
-2️⃣ **Modify `api_client.py`** to fetch only new data based on the last timestamp.  
+2️⃣ **Modify `api_client.py`** to fetch only new data based on the last timestamps.  
 3️⃣ **Modify `data_handler.py`** to store data in MongoDB instead of JSON/CSV.  
 4️⃣ **Ensure logging tracks MongoDB transactions** and data retrieval.  
 
