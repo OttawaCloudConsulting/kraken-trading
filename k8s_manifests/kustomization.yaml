@@ -20,4 +20,4 @@ resources:
 - ingress.yaml
 - network.yaml
 - observability.yaml
-- probe.yaml
+# - probe.yaml
