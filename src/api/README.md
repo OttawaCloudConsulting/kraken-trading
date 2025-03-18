@@ -236,9 +236,10 @@ TXID123,O123,BTC/USD,1700000000,buy,50000.00,1000.00,2.00,0.02
 
 ## 📅 Future Roadmap
 
-- ✅ **MongoDB Integration** → Store trade data in a NoSQL database.
-- ✅ **AWS S3 Storage** → Upload trade history files to cloud storage.
-- ✅ **Enhanced Data Analysis** → Generate trade insights and statistics.
+- ✅ **Manual extract | tag: v0.1.0** → Will retrieve data manually, format and export to file 
+- ❌ **MongoDB Integration** → Store trade data in a NoSQL database.
+- ❌ **AWS S3 Storage** → Upload trade history files to cloud storage.
+- ❌ **Enhanced Data Analysis** → Generate trade insights and statistics.
 
 ---
 🚀 **Developed & Maintained by Christian Turner**
