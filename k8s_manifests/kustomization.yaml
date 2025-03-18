@@ -15,7 +15,7 @@ commonAnnotations:
 resources:
 - rbac.yaml
 - pvc.yaml
-# - configs.yaml
+- configs.yaml
 # - deployments.yaml
 # - ingress.yaml
 # - network.yaml
