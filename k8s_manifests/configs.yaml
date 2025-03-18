@@ -6,7 +6,7 @@ metadata:
     app.kubernetes.io/component: secret
 stringData:
   mongodb-username: "admin"
-  mongodb-password: "supersecurepassword"
+  mongodb-password: "athena123!"
   external-api-token: "your-api-token"
 type: Opaque
 ---
@@ -17,7 +17,7 @@ metadata:
   labels:
     app.kubernetes.io/component: configmap
 data:
-  APP_ENV: "production"
+  APP_ENV: "development"
   LOG_LEVEL: "info"
   MONGO_URI: "mongodb://$(mongodb-username):$(mongodb-password)@mongodb-service:27017/app-db"
   REPORTS_STORAGE_PATH: "/mnt/reports"
