@@ -41,14 +41,14 @@ def main() -> None:
     # Fetch trade history
     trades = kraken_client.get_trade_history()
     if trades:
-        logger.info("✅ Trade history retrieved successfully.")
+        logger.info(f"✅ Retrieved {len(trades)} trades successfully.")
         logger.info(f"storage_location: {storage_location}")
-        save_trades(trades, format="json", location=storage_location, logger=logger, mongodb_client=mongodb_client)
+        metadata = {"data_type": "trades", "timestamp": int(time.time())}
+        save_trades(trades, format="json", location=storage_location, logger=logger, mongodb_client=mongodb_client, metadata=metadata)
         # save_trades(trades, format="csv", location="local", logger=logger)
         
         # Store metadata using retrieval timestamp
-        metadata = {"data_type": "trades", "timestamp": int(time.time())}
-        mongodb_client.store_metadata(metadata)
+        # mongodb_client.store_metadata(metadata)
     else:
         logger.error("❌ Failed to retrieve trade history.")
     
@@ -57,12 +57,10 @@ def main() -> None:
     if staking_rewards:
         logger.info(f"✅ Retrieved {len(staking_rewards)} staking reward entries.")
         logger.info(f"storage_location: {storage_location}")
-        save_staking_rewards(staking_rewards, format="json", location=storage_location, logger=logger, mongodb_client=mongodb_client)
-        # save_staking_rewards(staking_rewards, format="csv", location="local", logger=logger)
-        
-        # Store metadata using retrieval timestamp
         metadata = {"data_type": "rewards", "timestamp": int(time.time())}
-        mongodb_client.store_metadata(metadata)
+        save_staking_rewards(staking_rewards, format="json", location=storage_location, logger=logger, mongodb_client=mongodb_client, metadata=metadata)
+        # save_staking_rewards(staking_rewards, format="csv", location="local", logger=logger)
+
     else:
         logger.error("❌ No staking rewards retrieved.")
 

@@ -52,7 +52,7 @@ def _save_to_local(data: Dict, format: str, filename: str, logger: logging.Logge
     except (IOError, OSError) as error:
         logger.error(f"❌ Failed to save file: {filename}. Error: {error}")
 
-def save_trades(trades: Dict, format: str, location: str, logger: logging.Logger, mongodb_client=None, filename: Optional[str] = None) -> None:
+def save_trades(trades: Dict, format: str, location: str, logger: logging.Logger, mongodb_client=None, metadata: Optional[Dict] = None, filename: Optional[str] = None) -> None:
     """Handles saving trade history to the specified location and format."""
     if location == "local":
         logger.info(f"Saving {len(trades)} trades to local storage...")
@@ -62,10 +62,11 @@ def save_trades(trades: Dict, format: str, location: str, logger: logging.Logger
         for trade_id, trade_data in trades.items():
             logger.debug(f"Storing trade in MongoDB: {trade_id}")
             mongodb_client.store_trade_data(trade_data)
+            mongodb_client.store_metadata(metadata)
     else:
         logger.error(f"❌ Unsupported storage location: {location}")
 
-def save_staking_rewards(staking_data: Dict, format: str, location: str, logger: logging.Logger, mongodb_client=None, filename: Optional[str] = None) -> None:
+def save_staking_rewards(staking_data: Dict, format: str, location: str, logger: logging.Logger, mongodb_client=None, metadata: Optional[Dict] = None, filename: Optional[str] = None) -> None:
     """Handles saving staking rewards (via ledger entries) to the specified location and format."""
     if location == "local":
         logger.info(f"Saving {len(staking_data)} staking rewards to local storage...")
@@ -75,5 +76,8 @@ def save_staking_rewards(staking_data: Dict, format: str, location: str, logger:
         for reward_id, reward_data in staking_data.items():
             logger.debug(f"Storing staking reward in MongoDB: {reward_id}")
             mongodb_client.store_staking_data(reward_data)
+            mongodb_client.store_metadata(metadata)
     else:
         logger.error(f"❌ Unsupported storage location: {location}")
+
+        
