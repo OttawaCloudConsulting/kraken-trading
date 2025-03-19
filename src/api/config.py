@@ -10,6 +10,10 @@ KRAKEN_API_EXPIRY = os.getenv("KRAKEN_API_EXPIRY")
 KRAKEN_API_KEY = os.getenv("KRAKEN_API_KEY")
 KRAKEN_API_SECRET = os.getenv("KRAKEN_API_SECRET")
 
+# Ensure keys are loaded properly
+if not KRAKEN_API_KEY or not KRAKEN_API_SECRET:
+    raise ValueError("❌ Kraken API keys not found. Please set them in the .env file.")
+
 # Convert expiry date to datetime object
 if KRAKEN_API_EXPIRY:
     try:
@@ -18,8 +22,11 @@ if KRAKEN_API_EXPIRY:
     except ValueError:
         raise ValueError("❌ Invalid date format in .env. Use YYYY-MM-DD.")
 else:
-    print("⚠ No expiry date set for API Key.")
+    print("⚠️ No expiry date set for API Key.")
 
-# Ensure keys are loaded properly
-if not KRAKEN_API_KEY or not KRAKEN_API_SECRET:
-    raise ValueError("❌ Kraken API keys not found. Please set them in the .env file.")
+# MongoDB Configuration
+MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017")
+DB_NAME = os.getenv("DB_NAME", "kraken_data")
+
+# Enable or Disable MongoDB Storage
+STORE_IN_MONGODB = os.getenv("STORE_IN_MONGODB", "false").lower() == "true"

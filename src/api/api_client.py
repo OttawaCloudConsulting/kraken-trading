@@ -18,90 +18,92 @@ class KrakenAPIClient:
     """Client for interacting with Kraken's API."""
 
     def __init__(self, api_key: str, api_secret: str, logger: logging.Logger):
-        """Initializes the Kraken API client.
-
+        """Initialize the Kraken API client.
+        
         Args:
-            api_key: The API key for Kraken authentication.
-            api_secret: The API secret for Kraken authentication.
+            api_key: Kraken API key.
+            api_secret: Kraken API secret.
             logger: Logger instance for logging API interactions.
         """
         self.api_key = api_key
         self.api_secret = api_secret
         self.logger = logger
-        self.logger.debug("🔑 KrakenAPIClient initialized.")
-
-    def _generate_signature(self, url_path: str, data: Dict[str, Any]) -> str:
-        """Generates the Kraken API signature for authentication.
-
-        Args:
-            url_path: The API endpoint path.
-            data: The request payload.
-
-        Returns:
-            A signature string for the API request.
-        """
-        secret_bytes = base64.b64decode(self.api_secret)
-        nonce = str(int(time.time() * 1000))  # Convert nonce to string format
-        data["nonce"] = nonce
-        encoded_payload = urlencode(data)
-        message = url_path.encode() + hashlib.sha256((nonce + encoded_payload).encode()).digest()
-        signature = hmac.new(secret_bytes, message, hashlib.sha512)
-        return base64.b64encode(signature.digest()).decode()
-
-    def _make_request(self, endpoint: str, payload: Dict[str, Any]) -> Dict[str, Any]:
-        """Makes a request to Kraken's API.
-
-        Args:
-            endpoint: The Kraken API endpoint.
-            payload: The request payload.
-
-        Returns:
-            The API response as a dictionary.
-        """
-        url = KRAKEN_API_URL + endpoint
-        headers = {
-            "API-Key": self.api_key,
-            "API-Sign": self._generate_signature(endpoint, payload),
-        }
-        response = requests.post(url, headers=headers, data=payload)
-        return response.json()
 
     def get_trade_history(self) -> Dict[str, Any]:
         """Fetches trade history from Kraken.
-
+        
         Returns:
-            A dictionary containing trade history data.
+            Dictionary containing trade history.
         """
-        self.logger.info("📥 Fetching trade history from Kraken...")
-        payload = {"nonce": int(time.time() * 1000)}
-        response = self._make_request(TRADE_HISTORY_ENDPOINT, payload)
-
-        if response.get("error"):
-            self.logger.error(f"❌ API Error: {response['error']}")
-            return {}
-
-        self.logger.info("✅ Trade history retrieved successfully.")
-        return response.get("result", {}).get("trades", {})
+        response = self._make_request("POST", TRADE_HISTORY_ENDPOINT, {})
+        if response:
+            trades = response.get("result", {}).get("trades", {})
+            self.logger.debug(f"Raw trade history response: {trades}")
+            for trade_id, trade_data in trades.items():
+                self.logger.debug(f"Trade ID: {trade_id}, Timestamp: {trade_data.get('time')}")
+            return trades
+        return {}
 
     def get_staking_rewards(self) -> Dict[str, Any]:
-        """Fetches staking rewards from Kraken using ledger entries, filtering only actual staking earnings.
-
+        """Fetches staking rewards from Kraken's ledger entries.
+        
         Returns:
-            A dictionary containing staking rewards data.
+            Dictionary containing staking rewards.
         """
-        self.logger.info("📥 Fetching staking rewards from Kraken via ledgers...")
-        payload = {"nonce": int(time.time() * 1000), "asset": "all", "type": "staking"}
-        response = self._make_request(LEDGER_ENTRIES_ENDPOINT, payload)
+        response = self._make_request("POST", LEDGER_ENTRIES_ENDPOINT, {"asset": "all"})
+        if response:
+            ledger_entries = response.get("result", {}).get("ledger", {})
+            self.logger.debug(f"Raw ledger response: {ledger_entries}")
+            for entry_id, entry_data in ledger_entries.items():
+                if entry_data.get("type") == "staking":
+                    self.logger.debug(f"Ledger ID: {entry_id}, Timestamp: {entry_data.get('time')}")
+            return ledger_entries
+        return {}
 
-        if response.get("error"):
-            self.logger.error(f"❌ API Error: {response['error']}")
+    def _make_request(self, method: str, endpoint: str, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Handles making authenticated API requests to Kraken.
+        
+        Args:
+            method: HTTP method (e.g., "POST").
+            endpoint: Kraken API endpoint.
+            data: Request parameters.
+        
+        Returns:
+            Dictionary containing the API response.
+        """
+        url = f"{KRAKEN_API_URL}{endpoint}"
+        headers = self._generate_headers(endpoint, data)
+        response = requests.request(method, url, headers=headers, data=urlencode(data))
+        
+        try:
+            response_json = response.json()
+            if response_json.get("error"):
+                self.logger.error(f"Kraken API error: {response_json['error']}")
+            return response_json
+        except Exception as e:
+            self.logger.error(f"Failed to parse response JSON: {e}")
             return {}
 
-        ledger_entries = response.get("result", {}).get("ledger", {})
-        staking_rewards = {
-            key: entry
-            for key, entry in ledger_entries.items()
-            if entry.get("type") == "staking" and entry.get("subtype") == ""
+    def _generate_headers(self, endpoint: str, data: Dict[str, Any]) -> Dict[str, str]:
+        """Generates Kraken API authentication headers.
+        
+        Args:
+            endpoint: Kraken API endpoint.
+            data: Request parameters.
+        
+        Returns:
+            Dictionary containing authentication headers.
+        """
+        nonce = str(int(time.time() * 1000))
+        data["nonce"] = nonce
+        post_data = urlencode(data).encode()
+        
+        api_sign = hmac.new(base64.b64decode(self.api_secret),
+                            (endpoint.encode() + hashlib.sha256(nonce.encode() + post_data).digest()),
+                            hashlib.sha512)
+        
+        return {
+            "API-Key": self.api_key,
+            "API-Sign": base64.b64encode(api_sign.digest()).decode(),
+            "Content-Type": "application/x-www-form-urlencoded"
         }
-        self.logger.info(f"✅ Retrieved {len(staking_rewards)} staking reward entries.")
-        return staking_rewards

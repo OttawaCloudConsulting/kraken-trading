@@ -1,16 +1,12 @@
-"""MongoDB Client for Storing Trade History & Staking Rewards."""
+"""MongoDB Client for Storing Trade History, Staking Rewards, and Metadata."""
 
-import os
 import logging
 from typing import Optional, Dict
 from pymongo import MongoClient, errors
-
-# MongoDB Connection Configuration
-MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017")
-DB_NAME = "kraken_data"
+from config import MONGO_URI, DB_NAME
 
 class MongoDBClient:
-    """Handles MongoDB operations for Kraken trade history & staking rewards."""
+    """Handles MongoDB operations for Kraken trade history, staking rewards, and metadata."""
 
     def __init__(self, logger: logging.Logger) -> None:
         """Initializes MongoDB client and collections.
@@ -40,21 +36,35 @@ class MongoDBClient:
             # Ensure indexes for efficient queries
             self.trades_collection.create_index("timestamp", unique=False)
             self.rewards_collection.create_index("timestamp", unique=False)
+            self.metadata_collection.create_index("timestamp", unique=True)  # Ensure unique timestamps
             
             self.logger.info("MongoDB Client initialized successfully.")
         except errors.ConnectionFailure as e:
             self.logger.error("MongoDB connection failed: %s", e)
             raise
 
-    def get_last_retrieval_timestamp(self, data_type: str) -> Optional[int]:
-        """Retrieves the last stored timestamp for trades or rewards."""
-        valid_types = {"trades": self.trades_collection, "rewards": self.rewards_collection}
-        if data_type not in valid_types:
-            self.logger.error("Invalid data_type: %s", data_type)
-            return None
+    def store_metadata(self, metadata: Dict) -> bool:
+        """Stores metadata such as last retrieval timestamps.
         
-        result = self.metadata_collection.find_one({"data_type": data_type}, sort=[("timestamp", -1)])
-        return result["timestamp"] if result else None
+        Args:
+            metadata: Dictionary containing metadata details.
+        
+        Returns:
+            bool: True if stored successfully, False otherwise.
+        """
+        if not metadata:
+            self.logger.warning("No metadata provided.")
+            return False
+        try:
+            self.metadata_collection.insert_one(metadata)
+            self.logger.info("Metadata stored successfully: %s", metadata)
+            return True
+        except errors.DuplicateKeyError:
+            self.logger.warning("Duplicate metadata timestamp, skipping insertion.")
+            return False
+        except errors.PyMongoError as e:
+            self.logger.error("Failed to store metadata: %s", e)
+            return False
 
     def store_trade_data(self, trade_data: Dict) -> bool:
         """Stores trade data into MongoDB."""

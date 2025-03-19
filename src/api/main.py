@@ -2,9 +2,11 @@
 
 import os
 import logging
+import time
 from api_client import KrakenAPIClient
 from data_handler import save_trades, save_staking_rewards
 from config import KRAKEN_API_KEY, KRAKEN_API_SECRET
+from mongodb_client import MongoDBClient
 
 def configure_logger() -> logging.Logger:
     """Configures and returns the logger instance.
@@ -26,15 +28,27 @@ def main() -> None:
     logger = configure_logger()
     logger.info("🚀 Starting Kraken trade and staking rewards retrieval...")
     
-    # Initialize Kraken API Client with logger
+    # Initialize Kraken API Client and MongoDB Client
     kraken_client = KrakenAPIClient(KRAKEN_API_KEY, KRAKEN_API_SECRET, logger)
+    mongodb_client = MongoDBClient(logger)
+
+    # Enable MongoDB storage based on environment variable STORE_IN_MONGODB
+    STORE_IN_MONGODB = os.getenv("STORE_IN_MONGODB", "false").lower() == "true"
+    logger.debug(f"STORE_IN_MONGODB: {STORE_IN_MONGODB}")
+    storage_location = "mongodb" if STORE_IN_MONGODB else "local"
+    logger.info(f"📦 Data storage location: {storage_location}")
     
     # Fetch trade history
     trades = kraken_client.get_trade_history()
     if trades:
         logger.info("✅ Trade history retrieved successfully.")
-        save_trades(trades, format="json", location="local", logger=logger)
-        save_trades(trades, format="csv", location="local", logger=logger)
+        logger.info(f"storage_location: {storage_location}")
+        save_trades(trades, format="json", location=storage_location, logger=logger, mongodb_client=mongodb_client)
+        # save_trades(trades, format="csv", location="local", logger=logger)
+        
+        # Store metadata using retrieval timestamp
+        metadata = {"data_type": "trades", "timestamp": int(time.time())}
+        mongodb_client.store_metadata(metadata)
     else:
         logger.error("❌ Failed to retrieve trade history.")
     
@@ -42,8 +56,13 @@ def main() -> None:
     staking_rewards = kraken_client.get_staking_rewards()
     if staking_rewards:
         logger.info(f"✅ Retrieved {len(staking_rewards)} staking reward entries.")
-        save_staking_rewards(staking_rewards, format="json", location="local", logger=logger, filename="staking_rewards")
-        save_staking_rewards(staking_rewards, format="csv", location="local", logger=logger, filename="staking_rewards")
+        logger.info(f"storage_location: {storage_location}")
+        save_staking_rewards(staking_rewards, format="json", location=storage_location, logger=logger, mongodb_client=mongodb_client)
+        # save_staking_rewards(staking_rewards, format="csv", location="local", logger=logger)
+        
+        # Store metadata using retrieval timestamp
+        metadata = {"data_type": "rewards", "timestamp": int(time.time())}
+        mongodb_client.store_metadata(metadata)
     else:
         logger.error("❌ No staking rewards retrieved.")
 
