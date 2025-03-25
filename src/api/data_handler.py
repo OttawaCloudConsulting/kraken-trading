@@ -5,7 +5,7 @@ import json
 import csv
 import time
 import logging
-from typing import Dict, Optional
+from typing import Dict, Optional, Tuple, List
 
 def _ensure_output_directory() -> None:
     """Ensures that the 'outputs/' directory exists."""
@@ -80,4 +80,22 @@ def save_staking_rewards(staking_data: Dict, format: str, location: str, logger:
     else:
         logger.error(f"❌ Unsupported storage location: {location}")
 
-        
+def extract_record_timestamps(logger: logging.Logger, records: List[Dict], timestamp_key: str) -> Tuple[Optional[int], Optional[int]]:
+    """Extracts the earliest and latest timestamps from a list of records.
+    
+    Args:
+        records: List of trade or staking reward records.
+        timestamp_key: The key that holds the timestamp value.
+    
+    Returns:
+        A tuple (record_timestamp_start, record_timestamp_end) with integer timestamps.
+    """
+    if not records:
+        return None, None
+    logger.info(f"Extracting timestamps from {len(records)} records...")
+    timestamps = [int(record[timestamp_key]) for record in records if timestamp_key in record]
+    
+    if not timestamps:
+        return None, None
+
+    return min(timestamps), max(timestamps)
