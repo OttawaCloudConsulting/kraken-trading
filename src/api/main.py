@@ -29,8 +29,8 @@ def main() -> None:
     logger.info("🚀 Starting Kraken trade and staking rewards retrieval...")
     
     # Initialize Kraken API Client and MongoDB Client
-    kraken_client = KrakenAPIClient(KRAKEN_API_KEY, KRAKEN_API_SECRET, logger)
     mongodb_client = MongoDBClient(logger)
+    kraken_client = KrakenAPIClient(KRAKEN_API_KEY, KRAKEN_API_SECRET, logger, mongodb_client=mongodb_client)
 
     # Enable MongoDB storage based on environment variable STORE_IN_MONGODB
     STORE_IN_MONGODB = os.getenv("STORE_IN_MONGODB", "false").lower() == "true"
