@@ -16,7 +16,7 @@ resources:
 - rbac.yaml
 - pvc.yaml
 - configs.yaml
-# - deployments.yaml
+- deployments.yaml
 # - ingress.yaml
 # - network.yaml
 # - observability.yaml
