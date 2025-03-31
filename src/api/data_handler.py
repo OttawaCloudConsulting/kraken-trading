@@ -61,8 +61,8 @@ def save_trades(trades: Dict, format: str, location: str, logger: logging.Logger
     elif location == "mongodb" and mongodb_client:
         for trade_id, trade_data in trades.items():
             logger.debug(f"Storing trade in MongoDB: {trade_id}")
-            mongodb_client.store_trade_data(trade_data)
-            mongodb_client.store_metadata(metadata)
+            mongodb_client.store_data("trades", trade_data)
+            mongodb_client.store_data("metadata", metadata)
     else:
         logger.error(f"❌ Unsupported storage location: {location}")
 
@@ -73,10 +73,10 @@ def save_staking_rewards(staking_data: Dict, format: str, location: str, logger:
         file_path = _generate_filename("rewards", format, filename)
         _save_to_local(staking_data, format, file_path, logger)
     elif location == "mongodb" and mongodb_client:
-        for reward_id, reward_data in staking_data.items():
+        for reward_id, reward_data in list(staking_data.items()):
             logger.debug(f"Storing staking reward in MongoDB: {reward_id}")
-            mongodb_client.store_staking_data(reward_data)
-            mongodb_client.store_metadata(metadata)
+            mongodb_client.store_data("rewards", reward_data)
+            mongodb_client.store_data("metadata", metadata)
     else:
         logger.error(f"❌ Unsupported storage location: {location}")
 

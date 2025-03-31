@@ -36,15 +36,18 @@ class MongoDBClient:
             # Ensure indexes for efficient queries
             self.trades_collection.create_index("timestamp", unique=False)
             self.rewards_collection.create_index("timestamp", unique=False)
-            self.metadata_collection.create_index("timestamp", unique=True)  # Ensure unique timestamps
+            self.metadata_collection.create_index(
+                [("data_type", 1), ("record_timestamp_end", -1)]
+            )  # Ensure unique timestamps
             
             self.logger.info("MongoDB Client initialized successfully.")
         except errors.ConnectionFailure as e:
             self.logger.error("MongoDB connection failed: %s", e)
             raise
 
-    def store_metadata(self, metadata: Dict) -> bool:
-        """Stores metadata such as last retrieval timestamps.
+    def store_data(self, collection_name: str, data: Dict) -> bool:
+        """Stores metadata,trades or rewards including 
+            last retrieval timestamps.
         
         Args:
             metadata: Dictionary containing metadata details.
@@ -52,44 +55,22 @@ class MongoDBClient:
         Returns:
             bool: True if stored successfully, False otherwise.
         """
-        if not metadata:
-            self.logger.warning("No metadata provided.")
+        if not data:
+            self.logger.warning("No data provided for collection '%s'.", collection_name)
             return False
         try:
-            self.metadata_collection.insert_one(metadata)
-            self.logger.info("Metadata stored successfully: %s", metadata)
+            collection = getattr(self, f"{collection_name}_collection", None)
+            if collection is None:
+                self.logger.error("Collection '%s' does not exist on MongoDBClient.", collection_name)
+                return False
+            collection.insert_one(data)
+            self.logger.info("Data stored successfully in '%s': %s", collection_name, data)
             return True
         except errors.DuplicateKeyError:
-            self.logger.warning("Duplicate metadata timestamp, skipping insertion.")
+            self.logger.warning("Duplicate key error for collection '%s'. Skipping insertion.", collection_name)
             return False
         except errors.PyMongoError as e:
-            self.logger.error("Failed to store metadata: %s", e)
-            return False
-
-    def store_trade_data(self, trade_data: Dict) -> bool:
-        """Stores trade data into MongoDB."""
-        if not trade_data:
-            self.logger.warning("No trade data provided.")
-            return False
-        try:
-            self.trades_collection.insert_one(trade_data)
-            self.logger.info("Trade data stored successfully.")
-            return True
-        except errors.PyMongoError as e:
-            self.logger.error("Failed to store trade data: %s", e)
-            return False
-
-    def store_staking_data(self, staking_data: Dict) -> bool:
-        """Stores staking reward data into MongoDB."""
-        if not staking_data:
-            self.logger.warning("No staking data provided.")
-            return False
-        try:
-            self.rewards_collection.insert_one(staking_data)
-            self.logger.info("Staking data stored successfully.")
-            return True
-        except errors.PyMongoError as e:
-            self.logger.error("Failed to store staking data: %s", e)
+            self.logger.error("Failed to store data in collection '%s': %s", collection_name, e)
             return False
 
     def get_latest_metadata(self, data_type: str) -> Optional[Dict]:
