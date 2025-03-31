@@ -18,6 +18,7 @@ jobs:
 
     - name: Extract metadata for tagging
       id: meta
+      working-directory: src/api
       run: |
         # Short commit SHA
         echo "sha_tag=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
@@ -29,14 +30,16 @@ jobs:
 
     - name: Extract version from Dockerfile
       id: version
+      working-directory: src/api
       run: |
-        version=$(grep -i 'LABEL version=' src/api/Dockerfile | sed -E 's/.*version="([^"]+)".*/\1/')
+        version=$(grep -i 'LABEL version=' Dockerfile | sed -E 's/.*version="([^"]+)".*/\1/')
         echo "dockerfile_version=$version" >> $GITHUB_OUTPUT
 
     - name: Build and tag Docker image
+      working-directory: src/api
       run: |
         docker build . \
-          --file src/api/Dockerfile \
+          --file Dockerfile \
           --tag kraken-trade-history:${{ steps.meta.outputs.sha_tag }} \
           --tag kraken-trade-history:${{ steps.meta.outputs.branch_tag }} \
           --tag kraken-trade-history:${{ steps.version.outputs.dockerfile_version }} \
