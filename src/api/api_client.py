@@ -177,7 +177,7 @@ class KrakenAPIClient:
 
         while True:
             self.logger.debug("Fetching staking reward batch %d with ofs=%d", batch, offset)
-            payload = {"asset": "all", "ofs": offset}
+            payload = {"asset": "all", "type": "staking", "ofs": offset}
             response = self._make_request_with_backoff("POST", LEDGER_ENTRIES_ENDPOINT, payload)
 
             if not response or "result" not in response or "ledger" not in response["result"]:
@@ -185,15 +185,15 @@ class KrakenAPIClient:
                 break
 
             ledger_entries = response["result"]["ledger"]
+            staking_rewards = {
+                k: v for k, v in ledger_entries.items() if v.get("type") == "staking"
+            }
             if not ledger_entries:
                 self.logger.info("Reached end of staking reward history.")
                 break
 
             new_rewards_added = 0
-            for entry_id, entry_data in ledger_entries.items():
-                if entry_data.get("type") != "staking":
-                    continue
-
+            for entry_id, entry_data in staking_rewards.items():
                 timestamp = entry_data.get("time")
                 if min_timestamp and timestamp <= min_timestamp:
                     continue
