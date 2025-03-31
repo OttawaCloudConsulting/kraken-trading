@@ -1,3 +1,4 @@
+LABEL version="0.1.0"
 FROM python:3.11-slim
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
