@@ -5,9 +5,11 @@ metadata:
   labels:
     app.kubernetes.io/component: secret
 stringData:
-  mongodb-username: "admin"
+  mongodb-username: "krakenapp"
   mongodb-password: "athena123!"
   external-api-token: "your-api-token"
+  kraken-api-key: "vS7ALvxBJr5b8wl8G9IAMdkP9+f5bW7GIX4ZTX3VVlQnlEhUFD7xDDPT"
+  kraken-api-secret: "jrDiOP/ybGpqYXjZdR8eYzFAMPVpNZe+2EFyTwtM/8q8N164yy3lInMW91DG9VW3qXovMsbgC/4h/ewGHyyEtg=="
 type: Opaque
 ---
 apiVersion: v1
