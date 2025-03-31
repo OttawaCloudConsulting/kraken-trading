@@ -1,0 +1,43 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches: [ "feature/mvp" ]
+  pull_request:
+    branches: [ "main" ]
+  
+env:
+  IMAGE_NAME: kraken-trade-history
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Extract metadata for tagging
+      id: meta
+      run: |
+        # Short commit SHA
+        echo "sha_tag=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+
+        # Branch name sanitized (slash to dash), plus date
+        branch=$(echo "${GITHUB_REF#refs/heads/}" | sed 's|/|-|g')
+        date=$(date +%Y%m%d)
+        echo "branch_tag=${branch}-${date}" >> $GITHUB_OUTPUT
+
+    - name: Extract version from Dockerfile
+      id: version
+      run: |
+        version=$(grep -i 'LABEL version=' src/api/Dockerfile | sed -E 's/.*version="([^"]+)".*/\1/')
+        echo "dockerfile_version=$version" >> $GITHUB_OUTPUT
+
+    - name: Build and tag Docker image
+      run: |
+        docker build . \
+          --file src/api/Dockerfile \
+          --tag kraken-trade-history:${{ steps.meta.outputs.sha_tag }} \
+          --tag kraken-trade-history:${{ steps.meta.outputs.branch_tag }} \
+          --tag kraken-trade-history:${{ steps.version.outputs.dockerfile_version }} \
+          --tag $IMAGE_NAME:latest
