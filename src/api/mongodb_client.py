@@ -91,3 +91,24 @@ class MongoDBClient:
         except errors.PyMongoError as e:
             self.logger.error("Failed to store staking data: %s", e)
             return False
+
+    def get_latest_metadata(self, data_type: str) -> Optional[Dict]:
+        """Retrieves the most recent metadata entry for a given data type.
+
+        Args:
+            data_type: Either 'trades' or 'rewards'.
+
+        Returns:
+            The latest metadata document or None if not found.
+        """
+        try:
+            result = self.metadata_collection.find_one(
+                {"data_type": data_type},
+                sort=[("record_timestamp_end", -1)]
+            )
+            if result:
+                self.logger.debug(f"Retrieved latest metadata: {result}")
+            return result
+        except Exception as e:
+            self.logger.error(f"Error retrieving metadata: {e}")
+            return None

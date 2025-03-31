@@ -39,7 +39,8 @@ def main() -> None:
     logger.info(f"📦 Data storage location: {storage_location}")
     
     # Fetch trade history
-    trades = kraken_client.get_trade_history()
+    # trades = kraken_client.get_trade_history()
+    trades, metadata = kraken_client.get_trade_history()
     if trades:
         logger.info(f"✅ Retrieved {len(trades)} trades successfully.")
         logger.info(f"storage_location: {storage_location}")

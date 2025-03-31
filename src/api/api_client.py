@@ -7,7 +7,7 @@ import base64
 import requests
 # import json
 import logging
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from urllib.parse import urlencode
 from data_handler import extract_record_timestamps
 
@@ -42,73 +42,74 @@ class KrakenAPIClient:
                     - timestamp (int): Time of execution.
                     - record_timestamp_start (int): Earliest trade timestamp.
                     - record_timestamp_end (int): Latest trade timestamp.
+                    - last_trade_id (str): Kraken trade ID of the most recent trade.
         """
         all_trades = {}
         seen_trade_ids = set()
+        offset = 0
         batch = 1
-        start = None
+        last_trade_id = None
+        first_batch_processed = False
+        total_expected = None
 
-        # Retrieve last metadata entry for 'trades'.
-        latest_metadata = self.mongodb_client.get_latest_metadata("trades") if self.mongodb_client else None
-        if latest_metadata and "record_timestamp_end" in latest_metadata:
-            start = latest_metadata["record_timestamp_end"] + 1
-            self.logger.info("Resuming trade history from timestamp: %s", start)
-        else:
-            self.logger.info("No existing metadata. Retrieving all trades from the beginning.")
+        self.logger.info("Retrieving Kraken trade history using offset pagination.")
 
-        # Paginated retrieval loop.
         while True:
-            self.logger.debug("Fetching trade history batch %d with start=%s", batch, start or 'None')
-            payload = {"start": start} if start else {}
+            self.logger.debug("Fetching trade history batch %d with offset=%d", batch, offset)
+            payload = {"ofs": offset}
             response = self._make_request_with_backoff("POST", TRADE_HISTORY_ENDPOINT, payload)
 
             if not response or "result" not in response or "trades" not in response["result"]:
                 self.logger.warning("No response or invalid structure from Kraken.")
                 break
 
-            trades = response["result"]["trades"]
+            result = response["result"]
+            trades = result.get("trades", {})
             self.logger.debug("Raw trade history response: %s", trades)
 
             if not trades:
                 self.logger.info("Reached end of trade history.")
                 break
 
+            if not first_batch_processed:
+                # Capture the total expected trade count and most recent trade ID
+                total_expected = result.get("count", 0)
+                last_trade_id = next(iter(trades.keys()), None)
+                self.logger.debug("Total trades reported by Kraken: %d", total_expected)
+                self.logger.debug("Last trade ID from first batch: %s", last_trade_id)
+                first_batch_processed = True
+
             new_trades_added = 0
             for trade_id, trade_data in trades.items():
                 if trade_id not in seen_trade_ids:
-                    self.logger.debug("Trade ID: %s, Timestamp: %s", trade_id, trade_data.get("time"))
                     all_trades[trade_id] = trade_data
                     seen_trade_ids.add(trade_id)
                     new_trades_added += 1
+                    self.logger.debug("Trade ID: %s, Timestamp: %s", trade_id, trade_data.get("time"))
 
             self.logger.debug("Batch %d - New trades added: %d", batch, new_trades_added)
 
-            if new_trades_added == 0:
-                self.logger.warning("No new trades added in this batch. Ending pagination.")
-                break
-
-            timestamps = [trade["time"] for trade in trades.values() if "time" in trade]
-            if not timestamps:
-                self.logger.warning("No timestamps found in batch. Stopping pagination.")
-                break
-
-            start = int(min(timestamps)) - 1
+            offset += 50
             batch += 1
-            time.sleep(2.5)  # Throttle to avoid rate limit
+            time.sleep(2.5)  # Throttle to avoid rate limits
 
-        # record_timestamp_start, record_timestamp_end = extract_record_timestamps(
-        #     all_trades.values(), "time")
+            if total_expected is not None and offset >= total_expected:
+                self.logger.info("Reached total trade count: %d. Ending pagination.", total_expected)
+                break
+
         record_timestamp_start, record_timestamp_end = extract_record_timestamps(
             self.logger, list(all_trades.values()), "time")
 
-        self.logger.info("\u2705 Retrieved %d total trades.", len(all_trades))
-        self.logger.info("Trade timestamp range: %s to %s", record_timestamp_start, record_timestamp_end)
+        self.logger.info("✅ Retrieved %d total trades.", len(all_trades))
+        self.logger.info("Trade timestamp range: %s to %s",
+                        record_timestamp_start, record_timestamp_end)
 
         metadata = {
             "data_type": "trades",
             "timestamp": int(time.time()),
             "record_timestamp_start": record_timestamp_start,
-            "record_timestamp_end": record_timestamp_end
+            "record_timestamp_end": record_timestamp_end,
+            "last_trade_id": last_trade_id,
         }
 
         return all_trades, metadata
@@ -205,3 +206,49 @@ class KrakenAPIClient:
             "API-Sign": base64.b64encode(api_sign.digest()).decode(),
             "Content-Type": "application/x-www-form-urlencoded"
         }
+
+    def _get_last_trade_id(self) -> Optional[str]:
+        """Retrieve the last recorded trade ID from metadata.
+
+        Returns:
+            Optional[str]: The last recorded trade ID, or None if not found or if MongoDB is uninitialized.
+        """
+        if not self.mongodb_client:
+            self.logger.warning("MongoDB client is not initialized. Cannot retrieve last trade ID.")
+            return None
+
+        latest_metadata = self.mongodb_client.get_latest_metadata("trades")
+        if not latest_metadata:
+            self.logger.info("No metadata found for trades.")
+            return None
+
+        last_trade_id = latest_metadata.get("last_trade_id")
+        if last_trade_id:
+            self.logger.debug("Retrieved last trade ID from metadata: %s", last_trade_id)
+        else:
+            self.logger.info("No 'last_trade_id' field found in latest metadata entry.")
+
+        return last_trade_id
+    
+    def _get_min_trade_timestamp(self) -> Optional[int]:
+        """Retrieve the most recent trade timestamp from metadata.
+
+        Returns:
+            Optional[int]: The latest trade record's timestamp, or None if not found or unavailable.
+        """
+        if not self.mongodb_client:
+            self.logger.warning("MongoDB client is not initialized. Cannot retrieve trade timestamp.")
+            return None
+
+        latest_metadata = self.mongodb_client.get_latest_metadata("trades")
+        if not latest_metadata:
+            self.logger.info("No metadata found for trades.")
+            return None
+
+        min_timestamp = latest_metadata.get("record_timestamp_end")
+        if min_timestamp is not None:
+            self.logger.debug("Retrieved latest trade timestamp from metadata: %s", min_timestamp)
+        else:
+            self.logger.info("No 'record_timestamp_end' field found in latest metadata entry.")
+
+        return min_timestamp
