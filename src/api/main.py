@@ -5,7 +5,7 @@ import logging
 import time
 from api_client import KrakenAPIClient
 from data_handler import save_trades, save_staking_rewards
-from config import KRAKEN_API_KEY, KRAKEN_API_SECRET
+from config import KRAKEN_API_KEY, KRAKEN_API_SECRET, mongo_uri
 from mongodb_client import MongoDBClient
 
 def configure_logger() -> logging.Logger:
@@ -29,6 +29,7 @@ def main() -> None:
     logger.info("🚀 Starting Kraken trade and staking rewards retrieval...")
     
     # Initialize Kraken API Client and MongoDB Client
+    MONGO_URI = mongo_uri(logger)
     mongodb_client = MongoDBClient(logger)
     kraken_client = KrakenAPIClient(KRAKEN_API_KEY, KRAKEN_API_SECRET, logger, mongodb_client=mongodb_client)
 
