@@ -30,8 +30,11 @@ spec:
                     secretKeyRef:
                       name: app-secrets
                       key: kraken-api-secret
-                - name: MONGO_URI
-                  value: "mongodb://$(MONGO_USER):$(MONGO_PASS)@mongodb-service:27017"
+                - name: KRAKEN_API_EXPIRY
+                  valueFrom:
+                    secretKeyRef:
+                      name: app-secrets
+                      key: kraken-api-expiry
                 - name: MONGO_USER
                   valueFrom:
                     secretKeyRef:
@@ -46,6 +49,16 @@ spec:
                   value: "kraken_data"
                 - name: STORE_IN_MONGODB
                   value: "true"
+                - name: LOG_LEVEL
+                  valueFrom:
+                    configMapKeyRef:
+                      name: app-config
+                      key: LOG_LEVEL
+                - name: REPORTS_STORAGE_PATH
+                  valueFrom:
+                    configMapKeyRef:
+                      name: app-config
+                      key: REPORTS_STORAGE_PATH
               resources:
                 requests:
                   cpu: 200m
