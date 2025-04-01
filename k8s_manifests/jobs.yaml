@@ -16,7 +16,7 @@ spec:
           restartPolicy: Never
           containers:
             - name: kraken-trading
-              image: ghcr.io/ottawacloudconsulting/kraken-trading-api:0.1.1
+              image: ghcr.io/ottawacloudconsulting/kraken-trading-api:latest
               imagePullPolicy: IfNotPresent
               command: ["python", "main.py"]
               env:
