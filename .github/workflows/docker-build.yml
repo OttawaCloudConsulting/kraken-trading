@@ -5,7 +5,7 @@ on:
     branches: [ "feature/mvp" ]
   pull_request:
     branches: [ "main" ]
-  
+
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: kraken-trade-history-api
@@ -37,7 +37,7 @@ jobs:
         echo "sha_tag=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
 
         # Branch name sanitized (slash to dash), plus date
-        branch=$(echo "${GITHUB_REF#refs/heads/}" | sed 's|/|-|g')
+        branch=$(echo "${GITHUB_REF#refs/heads/}" | sed 's|/|-|g' | tr '[:upper:]' '[:lower:]' | tr -cd '[:alnum:]-')
         date=$(date +%Y%m%d)
         echo "branch_tag=${branch}-${date}"
         echo "branch_tag=${branch}-${date}" >> $GITHUB_OUTPUT
@@ -46,7 +46,7 @@ jobs:
       id: version
       working-directory: src/api
       run: |
-        version=$(grep -i 'LABEL version=' Dockerfile | sed -E 's/.*version="([^"]+)".*/\1/')
+        version=$(grep -i 'LABEL version=' Dockerfile | sed -E 's/.*version="([^"]+)".*/\1/' | tr '[:upper:]' '[:lower:]' | tr -cd '[:alnum:]-')
         echo "dockerfile_version=$version"
         echo "dockerfile_version=$version" >> $GITHUB_OUTPUT
 
