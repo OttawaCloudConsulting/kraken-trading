@@ -56,7 +56,4 @@ jobs:
         context: src/api
         push: true
         tags: |
-          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.sha_tag }}
-          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.branch_tag }}
-          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.dockerfile_version }}
           ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
