@@ -33,11 +33,13 @@ jobs:
       working-directory: src/api
       run: |
         # Short commit SHA
+        echo "sha_tag=$(git rev-parse --short HEAD)"
         echo "sha_tag=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
 
         # Branch name sanitized (slash to dash), plus date
         branch=$(echo "${GITHUB_REF#refs/heads/}" | sed 's|/|-|g')
         date=$(date +%Y%m%d)
+        echo "branch_tag=${branch}-${date}"
         echo "branch_tag=${branch}-${date}" >> $GITHUB_OUTPUT
 
     - name: Extract version from Dockerfile
@@ -45,6 +47,7 @@ jobs:
       working-directory: src/api
       run: |
         version=$(grep -i 'LABEL version=' Dockerfile | sed -E 's/.*version="([^"]+)".*/\1/')
+        echo "dockerfile_version=$version"
         echo "dockerfile_version=$version" >> $GITHUB_OUTPUT
 
     - name: Build and push Docker image to GHCR
