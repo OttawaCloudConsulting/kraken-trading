@@ -25,8 +25,18 @@ if KRAKEN_API_EXPIRY:
 else:
     print("⚠️ No expiry date set for API Key.")
 
+def mongo_uri():
+    """
+    Builds and returns the MongoDB URI using environment variables.
+    """
+    username = os.getenv("MONGO_USER")
+    password = os.getenv("MONGO_PASS")
+    if username and password:
+        return f"mongodb://{username}:{password}@mongodb-service:27017"
+    return None
+
 # MongoDB Configuration
-MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017")
+MONGO_URI = mongo_uri() or os.getenv("MONGO_URI", "mongodb://localhost:27017")
 DB_NAME = os.getenv("DB_NAME", "kraken_data")
 
 # Enable or Disable MongoDB Storage
