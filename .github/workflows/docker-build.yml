@@ -3,6 +3,8 @@ name: Docker Image CI
 on:
   push:
     branches: [ "feature/mvp" ]
+    paths:
+      - 'src/api/**'
   pull_request:
     branches: [ "main" ]
   
