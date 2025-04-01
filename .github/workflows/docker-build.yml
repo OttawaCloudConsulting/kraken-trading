@@ -65,12 +65,7 @@ jobs:
       with:
         context: src/api
         push: true
-        tags: |
-          ${{ steps.meta.outputs.tags }}
-          ${{ steps.meta.outputs.sha_tag }}
-          ${{ steps.meta.outputs.branch_tag }}
-          ${{ steps.version.outputs.dockerfile_version }}
-          latest
+        tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
 
     # - name: Build and push Docker image to GHCR
