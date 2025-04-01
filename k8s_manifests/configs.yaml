@@ -1,5 +1,6 @@
 apiVersion: v1
 kind: Secret
+type: Opaque
 metadata:
   name: app-secrets
   labels:
@@ -7,10 +8,9 @@ metadata:
 stringData:
   mongodb-username: "krakenapp"
   mongodb-password: "athena123!"
-  external-api-token: "your-api-token"
   kraken-api-key: "vS7ALvxBJr5b8wl8G9IAMdkP9+f5bW7GIX4ZTX3VVlQnlEhUFD7xDDPT"
   kraken-api-secret: "jrDiOP/ybGpqYXjZdR8eYzFAMPVpNZe+2EFyTwtM/8q8N164yy3lInMW91DG9VW3qXovMsbgC/4h/ewGHyyEtg=="
-type: Opaque
+  kraken-api-expiry: "2025-05-30"
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -20,7 +20,6 @@ metadata:
     app.kubernetes.io/component: configmap
 data:
   APP_ENV: "development"
-  LOG_LEVEL: "info"
-  MONGO_URI: "mongodb://$(mongodb-username):$(mongodb-password)@mongodb-service:27017/app-db"
+  LOG_LEVEL: "debug"
   REPORTS_STORAGE_PATH: "/mnt/reports"
   LOGS_STORAGE_PATH: "/mnt/logs"
