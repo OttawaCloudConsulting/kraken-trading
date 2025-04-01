@@ -39,8 +39,9 @@ spec:
                 - mongosh
                 - --eval
                 - "db.adminCommand('ping')"
-            initialDelaySeconds: 5
-            periodSeconds: 10
+            initialDelaySeconds: 45
+            periodSeconds: 20
+            failureThreshold: 6
           readinessProbe:
             exec:
               command:
