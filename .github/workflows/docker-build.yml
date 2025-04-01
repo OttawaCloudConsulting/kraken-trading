@@ -9,7 +9,6 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
-  # IMAGE_NAME: kraken-trade-history-api
 
 jobs:
   build:
@@ -31,20 +30,6 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Extract metadata for tagging
-      id: tagging
-      working-directory: src/api
-      run: |
-        # Short commit SHA
-        echo "sha_tag=$(git rev-parse --short HEAD)"
-        echo "sha_tag=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
-
-        # Branch name sanitized (slash to dash), plus date
-        branch=$(echo "${GITHUB_REF#refs/heads/}" | sed 's|/|-|g')
-        date=$(date +%Y%m%d)
-        echo "branch_tag=${branch}-${date}"
-        echo "branch_tag=${branch}-${date}" >> $GITHUB_OUTPUT
-
     - name: Extract version from Dockerfile
       id: version
       working-directory: src/api
@@ -58,7 +43,11 @@ jobs:
       uses: docker/metadata-action@v5
       with:
         images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-
+        tags: |
+          type=raw,value=latest
+          type=raw,value=${{ steps.version.outputs.dockerfile_version }}
+          type=raw,value=${{ github.sha }}
+          
     - name: Build and push Docker image
       id: push
       uses: docker/build-push-action@v6
@@ -67,14 +56,3 @@ jobs:
         push: true
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
-
-    # - name: Build and push Docker image to GHCR
-    #   uses: docker/build-push-action@v5
-    #   with:
-    #     context: src/api
-    #     push: true
-    #     tags: |
-    #       ${{ steps.meta.outputs.sha_tag }}
-    #       ${{ steps.meta.outputs.branch_tag }}
-    #       ${{ steps.version.outputs.dockerfile_version }}
-    #       latest
