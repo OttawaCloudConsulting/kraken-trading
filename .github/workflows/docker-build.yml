@@ -7,14 +7,26 @@ on:
     branches: [ "main" ]
   
 env:
-  IMAGE_NAME: kraken-trade-history
+  REGISTRY: ghcr.io
+  IMAGE_NAME: kraken-trade-history-api
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
 
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Log in to GitHub Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }
 
     - name: Extract metadata for tagging
       id: meta
@@ -35,12 +47,13 @@ jobs:
         version=$(grep -i 'LABEL version=' Dockerfile | sed -E 's/.*version="([^"]+)".*/\1/')
         echo "dockerfile_version=$version" >> $GITHUB_OUTPUT
 
-    - name: Build and tag Docker image
-      working-directory: src/api
-      run: |
-        docker build . \
-          --file Dockerfile \
-          --tag kraken-trade-history:${{ steps.meta.outputs.sha_tag }} \
-          --tag kraken-trade-history:${{ steps.meta.outputs.branch_tag }} \
-          --tag kraken-trade-history:${{ steps.version.outputs.dockerfile_version }} \
-          --tag $IMAGE_NAME:latest
+    - name: Build and push Docker image to GHCR
+      uses: docker/build-push-action@v5
+      with:
+        context: src/api
+        push: true
+        tags: |
+          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.sha_tag }}
+          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.branch_tag }}
+          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.dockerfile_version }}
+          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
