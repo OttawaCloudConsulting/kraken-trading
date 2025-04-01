@@ -9,7 +9,6 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: kraken-trading-api
-  IMAGE_PATH: ${{ .REGISTRY }}/${{ github.repository_owner }}/${{ .IMAGE_NAME }}
 
 jobs:
   build:
@@ -43,7 +42,7 @@ jobs:
       id: meta
       uses: docker/metadata-action@v5
       with:
-        images: ${{ env.REGISTRY }}/${{ env.IMAGE_PATH }}
+        images: ${{ env.REGISTRY }}/ ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}
         tags: |
           type=raw,value=latest
           type=raw,value=${{ steps.version.outputs.dockerfile_version }}
