@@ -8,7 +8,7 @@ on:
   
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: kraken-trade-history-api
+  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
   build:
