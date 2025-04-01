@@ -17,6 +17,7 @@ resources:
 - pvc.yaml
 - configs.yaml
 - deployments.yaml
+- jobs.yaml
 # - ingress.yaml
 # - network.yaml
 # - observability.yaml
