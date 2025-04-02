@@ -3,7 +3,7 @@
 import logging
 from typing import Optional, Dict
 from pymongo import MongoClient, errors
-from config import MONGO_URI, DB_NAME
+from config import DB_NAME
 
 class MongoDBClient:
     """Handles MongoDB operations for Kraken trade history, staking rewards, and metadata."""
@@ -26,7 +26,7 @@ class MongoDBClient:
     def _connect(self) -> None:
         """Establishes connection to MongoDB and initializes collections."""
         try:
-            self.client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
+            self.client = pymongo.MongoClient(self.mongo_uri)
             self.client.server_info()  # Trigger connection error if MongoDB is unreachable
             self.db = self.client[DB_NAME]
             self.trades_collection = self.db["kraken_trades"]
