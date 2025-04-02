@@ -27,7 +27,7 @@ class MongoDBClient:
     def _connect(self) -> None:
         """Establishes connection to MongoDB and initializes collections."""
         try:
-            self.client = pymongo.MongoClient(self.mongo_uri)
+            self.client = MongoClient(self.mongo_uri)
             self.client.server_info()  # Trigger connection error if MongoDB is unreachable
             self.db = self.client[DB_NAME]
             self.trades_collection = self.db["kraken_trades"]
