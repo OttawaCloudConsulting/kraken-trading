@@ -20,9 +20,17 @@ spec:
           image: mongo:latest
           ports:
             - containerPort: 27017
-          envFrom:
-            - secretRef:
-                name: app-secrets
+          env:
+            - name: MONGO_INITDB_ROOT_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: mongodb-username
+            - name: MONGO_INITDB_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: mongodb-password
           volumeMounts:
             - name: mongodb-storage
               mountPath: /data/db
