@@ -8,13 +8,14 @@ from config import DB_NAME
 class MongoDBClient:
     """Handles MongoDB operations for Kraken trade history, staking rewards, and metadata."""
 
-    def __init__(self, logger: logging.Logger) -> None:
+    def __init__(self, logger: logging.Logger, mongo_uri: str) -> None:
         """Initializes MongoDB client and collections.
         
         Args:
             logger: Logger instance for logging MongoDB interactions.
         """
         self.logger = logger
+        self.mongo_uri = mongo_uri
         self.client = None
         self.db = None
         self.trades_collection = None
