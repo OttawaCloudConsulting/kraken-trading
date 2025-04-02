@@ -17,7 +17,7 @@ spec:
           containers:
             - name: kraken-trading
               image: ghcr.io/ottawacloudconsulting/kraken-trading-api:latest
-              imagePullPolicy: IfNotPresent
+              imagePullPolicy: Always
               command: ["python", "main.py"]
               env:
                 - name: KRAKEN_API_KEY
