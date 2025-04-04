@@ -1,7 +1,7 @@
 """Staking Rewards view for Kraken Trade History UI."""
 
 import streamlit as st
-from utils.mongo_client import get_collection
+from utils.mongo_client import MongoDBClient
 
 
 def render_rewards(mongo_uri: str, db_name: str) -> None:
@@ -13,7 +13,8 @@ def render_rewards(mongo_uri: str, db_name: str) -> None:
     """
     st.title("🏆 Staking Rewards")
 
-    collection = get_collection(mongo_uri, db_name, "kraken_rewards")
+    client = MongoDBClient()
+    collection = client.get_collection("kraken_rewards")
     if collection is None:
         st.error("Unable to connect to MongoDB or find the 'kraken_rewards' collection.")
         return
