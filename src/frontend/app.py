@@ -8,7 +8,7 @@ from utils.mongo_client import MongoDBClient
 from views.dashboard import render_dashboard
 from views.trades import render_trades
 from views.rewards import render_rewards
-from views.settings import render_settings_view
+from views.settings import render_settings
 
 def main():
 
