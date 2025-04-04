@@ -1,4 +1,5 @@
 import streamlit as st
+import pandas as pd
 from utils.mongo_client import MongoDBClient  # ✅ Correct import
 
 def render_trades() -> None:
@@ -19,6 +20,15 @@ def render_trades() -> None:
 
     st.success(f"Retrieved {len(documents)} trade records.")
 
+    # 👉 Table Preview
+    st.subheader("Table Preview")
+    try:
+        df = pd.DataFrame(documents)
+        df.drop(columns=["_id"], inplace=True, errors="ignore")  # Optional cleanup
+        st.dataframe(df.head(10), use_container_width=True)
+    except Exception as e:
+        st.error(f"Failed to generate table view: {e}")
+
     # Preview a few records
     st.subheader("Sample Records")
     st.json(documents[:5])
@@ -37,8 +47,6 @@ def render_trades() -> None:
                 mime="application/json",
             )
         else:
-            import pandas as pd
-
             df = pd.DataFrame(documents).drop(columns=["_id"], errors="ignore")
             st.download_button(
                 label="Download CSV",
