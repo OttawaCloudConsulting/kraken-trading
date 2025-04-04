@@ -28,19 +28,19 @@ def main():
     # Route to selected page
     if page == "Dashboard":
         st.subheader("📈 Dashboard Overview")
-        st.info("Dashboard view not yet implemented.")
+        st.info("Dashboard view")
         render_dashboard()
     elif page == "Trades":
         st.subheader("💹 Trades Viewer")
-        st.info("Trades view not yet implemented.")
+        st.info("Trades view")
         render_trades()
     elif page == "Rewards":
         st.subheader("🎁 Staking Rewards Viewer")
-        st.info("Rewards view not yet implemented.")
+        st.info("Rewards view")
         render_rewards()
     elif page == "Settings":
         st.subheader("⚙️ Settings & Manual Triggers")
-        st.info("Settings view not yet implemented.")
+        st.info("Settings view")
         render_settings()
 
 if __name__ == "__main__":
