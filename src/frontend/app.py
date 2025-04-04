@@ -1,7 +1,9 @@
 """Main entry point for the Kraken Trading Dashboard (Streamlit UI)."""
 
+from utils.config import mongo_uri
 import streamlit as st
-from utils.mongo_client import get_mongo_client
+# from utils.mongo_client import get_mongo_client
+from utils.mongo_client import MongoDBClient
 
 # Placeholder view imports — to be implemented in future steps
 # from views.dashboard import render_dashboard
@@ -10,6 +12,9 @@ from utils.mongo_client import get_mongo_client
 # from views.settings import render_settings_view
 
 def main():
+    # Initialize Kraken API Client and MongoDB Client
+    # MONGO_URI = mongo_uri()
+
     """Launches the Streamlit frontend with navigation and MongoDB connection."""
     st.set_page_config(page_title="Kraken Trading Dashboard", layout="wide")
     st.title("📊 Kraken Trading Dashboard")
@@ -21,7 +26,8 @@ def main():
     )
 
     # Initialize MongoDB client
-    mongo_client = get_mongo_client()
+    # mongo_client = get_mongo_client()
+    mongo_client = MongoDBClient()
 
     # Route to selected page
     if page == "Dashboard":
