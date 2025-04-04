@@ -6,8 +6,8 @@ from utils.mongo_client import MongoDBClient
 
 # Placeholder view imports — to be implemented in future steps
 from views.dashboard import render_dashboard
-from views.trades import render_trades_view
-from views.rewards import render_rewards_view
+from views.trades import render_trades
+from views.rewards import render_rewards
 from views.settings import render_settings_view
 
 def main():
@@ -29,19 +29,19 @@ def main():
     if page == "Dashboard":
         st.subheader("📈 Dashboard Overview")
         st.info("Dashboard view not yet implemented.")
-        render_dashboard(mongo_client)
+        render_dashboard()
     elif page == "Trades":
         st.subheader("💹 Trades Viewer")
         st.info("Trades view not yet implemented.")
-        render_trades_view(mongo_client)
+        render_trades()
     elif page == "Rewards":
         st.subheader("🎁 Staking Rewards Viewer")
         st.info("Rewards view not yet implemented.")
-        render_rewards_view(mongo_client)
+        render_rewards()
     elif page == "Settings":
         st.subheader("⚙️ Settings & Manual Triggers")
         st.info("Settings view not yet implemented.")
-        render_settings_view(mongo_client)
+        render_settings()
 
 if __name__ == "__main__":
     main()

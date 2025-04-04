@@ -1,7 +1,7 @@
 import streamlit as st
 from utils.mongo_client import MongoDBClient  # ✅ Correct import
 
-def render_trades(mongo_uri: str, db_name: str) -> None:
+def render_trades() -> None:
     """Render the Trades view and allow export of data from MongoDB."""
     st.title("📈 Trade History")
 

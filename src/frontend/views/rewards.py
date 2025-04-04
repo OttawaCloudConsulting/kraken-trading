@@ -4,7 +4,7 @@ import streamlit as st
 from utils.mongo_client import MongoDBClient
 
 
-def render_rewards(mongo_uri: str, db_name: str) -> None:
+def render_rewards() -> None:
     """Render the Staking Rewards view and allow export of data from MongoDB.
 
     Args:
