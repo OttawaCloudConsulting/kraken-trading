@@ -1,22 +1,16 @@
-"""Trades view for Kraken Trade History UI."""
-
 import streamlit as st
-from utils.mongo_client import get_collection
-
+from utils.mongo_client import MongoDBClient  # ✅ Correct import
 
 def render_trades(mongo_uri: str, db_name: str) -> None:
-    """Render the Trades view and allow export of data from MongoDB.
-
-    Args:
-        mongo_uri: Connection URI for MongoDB.
-        db_name: Name of the database containing trade data.
-    """
+    """Render the Trades view and allow export of data from MongoDB."""
     st.title("📈 Trade History")
 
-    collection = get_collection(mongo_uri, db_name, "kraken_trades")
+    client = MongoDBClient()
+    collection = client.get_collection("kraken_trades")
     if collection is None:
         st.error("Unable to connect to MongoDB or find the 'kraken_trades' collection.")
         return
+
 
     documents = list(collection.find())
     if not documents:
