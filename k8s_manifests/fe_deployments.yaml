@@ -27,7 +27,7 @@ spec:
                 secretKeyRef:
                   name: app-secrets
                   key: mongodb-username
-            - name: MONGO_PWD
+            - name: MONGO_PASS
               valueFrom:
                 secretKeyRef:
                   name: app-secrets
