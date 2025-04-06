@@ -33,6 +33,10 @@ def main() -> None:
     mongodb_client = MongoDBClient(logger, MONGO_URI)
     kraken_client = KrakenAPIClient(KRAKEN_API_KEY, KRAKEN_API_SECRET, logger, mongodb_client=mongodb_client)
 
+    # Retrieve Kraken asset pairs for transforms
+    logger.info("Fetching asset pairs from Kraken...")
+    kraken_client.fetch_asset_pairs_from_kraken()
+
     # Enable MongoDB storage based on environment variable STORE_IN_MONGODB
     STORE_IN_MONGODB = os.getenv("STORE_IN_MONGODB", "false").lower() == "true"
     logger.debug(f"STORE_IN_MONGODB: {STORE_IN_MONGODB}")

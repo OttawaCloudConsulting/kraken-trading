@@ -13,6 +13,7 @@ from data_handler import extract_record_timestamps
 KRAKEN_API_URL = "https://api.kraken.com"
 TRADE_HISTORY_ENDPOINT = "/0/private/TradesHistory"
 LEDGER_ENTRIES_ENDPOINT = "/0/private/Ledgers"
+ASSET_PAIRS_ENDPOINT = "/0/public/AssetPairs"
 
 class KrakenAPIClient:
     """Client for interacting with Kraken's API."""
@@ -29,6 +30,38 @@ class KrakenAPIClient:
         self.api_secret = api_secret
         self.logger = logger
         self.mongodb_client = mongodb_client
+
+    def fetch_asset_pairs_from_kraken(self) -> Optional[Dict[str, Any]]:
+        """Fetch tradable asset pairs metadata from Kraken and store in MongoDB if missing.
+
+        Returns:
+            Dictionary of asset pairs metadata or None on failure.
+        """
+        try:
+            response = requests.get(f"{KRAKEN_API_URL}{ASSET_PAIRS_ENDPOINT}")
+            response.raise_for_status()
+            data = response.json()
+
+            if data.get("error"):
+                self.logger.error("Kraken API returned errors while fetching asset pairs: %s", data["error"])
+                return None
+
+            asset_pairs = data.get("result", {})
+            self.logger.debug("Raw asset pairs (truncated) response: %s", str(asset_pairs)[:250])
+            if not asset_pairs:
+                self.logger.warning("No asset pairs returned by Kraken API.")
+                return None
+
+            if self.mongodb_client:
+                self.logger.info("Caching asset pairs into MongoDB (kraken_asset_pairs collection).")
+                self.mongodb_client.upsert_asset_pair_metadata(asset_pairs)
+            else:
+                self.logger.warning("MongoDB client not initialized. Skipping asset pair caching.")
+
+            return asset_pairs
+        except Exception as e:
+            self.logger.error("Failed to fetch asset pairs from Kraken: %s", str(e))
+            return None
 
     def get_trade_history(self) -> tuple[Dict[str, Any], Dict[str, Any]]:
         """Retrieve the complete trade history using Kraken's paginated API.

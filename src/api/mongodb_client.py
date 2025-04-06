@@ -94,3 +94,34 @@ class MongoDBClient:
         except Exception as e:
             self.logger.error(f"Error retrieving metadata: {e}")
             return None
+
+        
+    def upsert_asset_pair_metadata(self, asset_pairs: dict) -> None:
+        """Upserts Kraken asset pair metadata into the MongoDB collection.
+
+        Args:
+            asset_pairs: Dictionary of asset pair metadata from Kraken API.
+        """
+        if self.db is None:
+            self.logger.warning("MongoDB client is not initialized. Cannot upsert asset pairs.")
+            return
+
+        collection = self.db["kraken_asset_pairs"]
+        upsert_count = 0
+
+        for pair_key, pair_data in asset_pairs.items():
+            try:
+                result = collection.update_one(
+                    {"pair_key": pair_key},
+                    {"$set": {"pair_key": pair_key, "data": pair_data}},
+                    upsert=True
+                )
+                if result.upserted_id:
+                    self.logger.debug("Inserted new asset pair: %s", pair_key)
+                elif result.modified_count:
+                    self.logger.debug("Updated asset pair: %s", pair_key)
+                upsert_count += 1
+            except Exception as e:
+                self.logger.error("Failed to upsert asset pair %s: %s", pair_key, str(e))
+
+        self.logger.info("✅ Upserted %d asset pair records into MongoDB.", upsert_count)
