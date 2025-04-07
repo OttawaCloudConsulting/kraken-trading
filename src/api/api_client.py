@@ -8,7 +8,7 @@ import requests
 import logging
 from typing import Dict, Any, Optional
 from urllib.parse import urlencode
-from data_handler import extract_record_timestamps
+from data_handler import extract_record_timestamps, enrich_trades_with_asset_metadata
 
 KRAKEN_API_URL = "https://api.kraken.com"
 TRADE_HISTORY_ENDPOINT = "/0/private/TradesHistory"
@@ -43,7 +43,7 @@ class KrakenAPIClient:
             data = response.json()
 
             if data.get("error"):
-                self.logger.error("Kraken API returned errors while fetching asset pairs: %s", data["error"])
+                self.logger.error("❌ Kraken API returned errors while fetching asset pairs: %s", data["error"])
                 return None
 
             asset_pairs = data.get("result", {})
@@ -60,7 +60,7 @@ class KrakenAPIClient:
 
             return asset_pairs
         except Exception as e:
-            self.logger.error("Failed to fetch asset pairs from Kraken: %s", str(e))
+            self.logger.error("❌ Failed to fetch asset pairs from Kraken: %s", str(e))
             return None
 
     def get_trade_history(self) -> tuple[Dict[str, Any], Dict[str, Any]]:
@@ -142,6 +142,7 @@ class KrakenAPIClient:
             self.logger.warning("No new trades retrieved.")
             return {}, {}
 
+        enrich_trades_with_asset_metadata(all_trades, self.logger, self.mongodb_client)
         record_timestamp_start, record_timestamp_end = extract_record_timestamps(
             self.logger, list(all_trades.values()), "time")
 
@@ -185,7 +186,7 @@ class KrakenAPIClient:
             else:
                 return response
 
-        self.logger.error("Max retries exceeded for Kraken API request.")
+        self.logger.error("❌ Max retries exceeded for Kraken API request.")
         return {}
 
     def get_staking_rewards(self) -> tuple[Dict[str, Any], Dict[str, Any]]:
@@ -283,10 +284,10 @@ class KrakenAPIClient:
         try:
             response_json = response.json()
             if response_json.get("error"):
-                self.logger.error(f"Kraken API error: {response_json['error']}")
+                self.logger.error(f"❌ Kraken API error: {response_json['error']}")
             return response_json
         except Exception as e:
-            self.logger.error(f"Failed to parse response JSON: {e}")
+            self.logger.error(f"❌ Failed to parse response JSON: {e}")
             return {}
 
     def _generate_headers(self, endpoint: str, data: Dict[str, Any]) -> Dict[str, str]:

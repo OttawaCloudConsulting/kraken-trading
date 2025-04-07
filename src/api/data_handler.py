@@ -7,6 +7,32 @@ import time
 import logging
 from typing import Dict, Optional, Tuple, List
 
+# Normalization maps for Kraken asset metadata
+BASE_TRANSFORM_MAP = {
+    "XXDG": "DOGE",
+    "XETC": "ETC",
+    "XETH": "ETH",
+    "XLTC": "LTC",
+    "XMLN": "MLN",
+    "XREP": "REP",
+    "XXBT": "BTC",
+    "XXLM": "XLM",
+    "XXMR": "XMR",
+    "XXRP": "XRP",
+    "XZEC": "ZEC",
+}
+
+WSNAME_TRANSFORM_MAP = {
+    "XCN/USD": "XCN/USD",
+    "XDG/USD": "DOGE/USD",
+    "XRT/USD": "XRT/USD",
+    "XTZ/USD": "XTZ/USD",
+    "XLM/USD": "XLM/USD",
+    "XMR/USD": "XMR/USD",
+    "XRP/USD": "XRP/USD",
+    "XBT/USD": "BTC/USD",
+}
+
 def _ensure_output_directory() -> None:
     """Ensures that the 'outputs/' directory exists."""
     os.makedirs("outputs", exist_ok=True)
@@ -99,3 +125,57 @@ def extract_record_timestamps(logger: logging.Logger, records: List[Dict], times
         return None, None
 
     return min(timestamps), max(timestamps)
+
+def enrich_trades_with_asset_metadata(trades: dict, logger: logging.Logger, mongodb_client) -> None:
+    """
+    Enriches trade records with `wsname` and `base` fields from cached Kraken asset pair metadata.
+
+    Each trade will be modified in-place by adding:
+    - `wsname`: The user-friendly asset pair name (e.g., 'ETH/USD').
+    - `base`: The base asset name (e.g., 'ETH').
+
+    If no metadata is found for a pair:
+    - Both `wsname` and `base` default to the original `pair` string.
+    - A warning will be logged once per missing pair.
+
+    Args:
+        trades: Dictionary of trade_id → trade_record.
+        logger: Logger for recording actions and errors.
+        mongodb_client: MongoDBClient instance to query the asset pair cache.
+    """
+    if not trades:
+        logger.warning("No trades provided for enrichment.")
+        return
+
+    if not mongodb_client:
+        logger.error("❌ MongoDB client is not initialized. Cannot enrich trades.")
+        return
+
+    seen_missing_pairs = set()
+    enriched_count = 0
+
+    for trade_id, trade_data in trades.items():
+        pair = trade_data.get("pair")
+        if not pair:
+            logger.warning("Trade %s is missing 'pair' field. Skipping.", trade_id)
+            continue
+
+        asset_info = mongodb_client.get_asset_pair_metadata(pair)
+
+        if asset_info:
+            base_raw = asset_info.get("base", pair)
+            wsname_raw = asset_info.get("wsname", pair)
+
+            # Normalize using maps
+            trade_data["base"] = BASE_TRANSFORM_MAP.get(base_raw, base_raw)
+            trade_data["wsname"] = WSNAME_TRANSFORM_MAP.get(wsname_raw, wsname_raw)
+        else:
+            if pair not in seen_missing_pairs:
+                logger.warning("No asset metadata found for pair: %s. Using fallback values.", pair)
+                seen_missing_pairs.add(pair)
+            trade_data["wsname"] = pair
+            trade_data["base"] = pair
+
+        enriched_count += 1
+
+    logger.info("✅ Enriched %d trades with asset metadata.", enriched_count)

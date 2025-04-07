@@ -43,7 +43,7 @@ class MongoDBClient:
             
             self.logger.info("MongoDB Client initialized successfully.")
         except errors.ConnectionFailure as e:
-            self.logger.error("MongoDB connection failed: %s", e)
+            self.logger.error("❌ MongoDB connection failed: %s", e)
             raise
 
     def store_data(self, collection_name: str, data: Dict) -> bool:
@@ -62,7 +62,7 @@ class MongoDBClient:
         try:
             collection = getattr(self, f"{collection_name}_collection", None)
             if collection is None:
-                self.logger.error("Collection '%s' does not exist on MongoDBClient.", collection_name)
+                self.logger.error("❌ Collection '%s' does not exist on MongoDBClient.", collection_name)
                 return False
             collection.insert_one(data)
             self.logger.info("Data stored successfully in '%s': %s", collection_name, data)
@@ -71,7 +71,7 @@ class MongoDBClient:
             self.logger.warning("Duplicate key error for collection '%s'. Skipping insertion.", collection_name)
             return False
         except errors.PyMongoError as e:
-            self.logger.error("Failed to store data in collection '%s': %s", collection_name, e)
+            self.logger.error("❌ Failed to store data in collection '%s': %s", collection_name, e)
             return False
 
     def get_latest_metadata(self, data_type: str) -> Optional[Dict]:
@@ -92,7 +92,7 @@ class MongoDBClient:
                 self.logger.debug(f"Retrieved latest metadata: {result}")
             return result
         except Exception as e:
-            self.logger.error(f"Error retrieving metadata: {e}")
+            self.logger.error(f"❌ Error retrieving metadata: {e}")
             return None
 
         
@@ -122,6 +122,77 @@ class MongoDBClient:
                     self.logger.debug("Updated asset pair: %s", pair_key)
                 upsert_count += 1
             except Exception as e:
-                self.logger.error("Failed to upsert asset pair %s: %s", pair_key, str(e))
+                self.logger.error("❌ Failed to upsert asset pair %s: %s", pair_key, str(e))
 
         self.logger.info("✅ Upserted %d asset pair records into MongoDB.", upsert_count)
+
+    # def get_asset_pair_metadata(self, pair: str, kraken_client) -> dict:
+    #     """Retrieve asset pair info (wsname, base) from MongoDB or fetch from Kraken if missing.
+        
+    #     Args:
+    #         pair: Kraken asset pair identifier (e.g., 'XETHZUSD')
+    #         kraken_client: Instance of KrakenAPIClient used to fetch asset pairs if needed.
+
+    #     Returns:
+    #         Dictionary with 'wsname' and 'base' fields, falling back to the input `pair` if not found.
+    #     """
+    #     collection = self.db["kraken_asset_pairs"]
+    #     document = collection.find_one({"pair_key": pair})
+
+    #     if document:
+    #         data = document.get("data", {})
+    #         wsname = data.get("wsname", pair)
+    #         base = data.get("base", pair)
+    #         return {"wsname": wsname, "base": base}
+
+    #     self.logger.warning("Asset pair '%s' not found in MongoDB. Fetching from Kraken...", pair)
+    #     fetched = kraken_client.fetch_asset_pairs_from_kraken()
+
+    #     if not fetched:
+    #         self.logger.error("❌ Unable to retrieve asset pairs from Kraken. Returning fallback values.")
+    #         return {"wsname": pair, "base": pair}
+
+    #     # Retry lookup after attempted insert
+    #     document = collection.find_one({"pair_key": pair})
+    #     if document:
+    #         data = document.get("data", {})
+    #         wsname = data.get("wsname", pair)
+    #         base = data.get("base", pair)
+    #         return {"wsname": wsname, "base": base}
+
+    #     self.logger.error("❌ Asset pair '%s' still not found after Kraken fetch. Using fallback.", pair)
+    #     return {"wsname": pair, "base": pair}
+
+    def get_asset_pair_metadata(self, pair: str) -> dict:
+        """
+        Retrieve asset pair metadata from MongoDB.
+
+        This method queries the 'kraken_asset_pairs' collection to fetch cached metadata
+        for the specified Kraken asset pair. It does not call Kraken if the data is missing.
+
+        Args:
+            pair: Kraken asset pair identifier (e.g., 'XETHZUSD')
+
+        Returns:
+            Dictionary containing metadata fields like 'wsname' and 'base'.
+            If not found, returns empty dict.
+        """
+        if self.db is None:
+            self.logger.error("❌ MongoDB client is not initialized. Cannot retrieve asset pair metadata.")
+            return {}
+
+        try:
+            collection = self.db["kraken_asset_pairs"]
+            document = collection.find_one({"pair_key": pair})
+
+            if document and "data" in document:
+                return {
+                    "wsname": document["data"].get("wsname", pair),
+                    "base": document["data"].get("base", pair)
+                }
+
+            self.logger.warning("No cached asset pair metadata found for pair: %s", pair)
+            return {}
+        except Exception as e:
+            self.logger.error("❌ Error retrieving asset metadata for pair %s: %s", pair, str(e))
+            return {}
