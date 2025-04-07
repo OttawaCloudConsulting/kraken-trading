@@ -9,6 +9,7 @@ import logging
 from typing import Dict, Any, Optional
 from urllib.parse import urlencode
 from data_handler import extract_record_timestamps, enrich_trades_with_asset_metadata
+from utils import normalize_timestamp
 
 KRAKEN_API_URL = "https://api.kraken.com"
 TRADE_HISTORY_ENDPOINT = "/0/private/TradesHistory"
@@ -124,6 +125,7 @@ class KrakenAPIClient:
                     break
 
                 if trade_id not in seen_trade_ids:
+                    trade_data["timestamp"] = normalize_timestamp(trade_data.get("time"))
                     all_trades[trade_id] = trade_data
                     seen_trade_ids.add(trade_id)
                     new_trades_added += 1
@@ -232,6 +234,7 @@ class KrakenAPIClient:
                     continue
 
                 if entry_id not in seen_ids:
+                    entry_data["timestamp"] = normalize_timestamp(entry_data.get("time"))
                     all_rewards[entry_id] = entry_data
                     seen_ids.add(entry_id)
                     self.logger.debug("Ledger ID: %s, Timestamp: %s", entry_id, timestamp)
