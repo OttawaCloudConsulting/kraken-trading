@@ -24,7 +24,8 @@ def render_trades() -> None:
     st.subheader("Table Preview")
     try:
         df = pd.DataFrame(documents)
-        df["time"] = pd.to_datetime(df["time"], unit="s")
+        df["time"] = df["time"].astype(int)  # ⬅️ Ensure int format
+        df["time"] = pd.to_datetime(df["time"], unit="s")  # ⬅️ Convert UNIX timestamp
         df.drop(columns=[
             "_id",
             "postxid",
