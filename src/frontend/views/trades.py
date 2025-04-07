@@ -24,6 +24,7 @@ def render_trades() -> None:
     st.subheader("Table Preview")
     try:
         df = pd.DataFrame(documents)
+        df["time"] = pd.to_datetime(df["time"], unit="s")
         df.drop(columns=[
             "_id",
             "postxid",
@@ -33,7 +34,7 @@ def render_trades() -> None:
             "misc"
             ], inplace=True, errors="ignore")  ### cleanup
         config = {
-            "time": st.column_config.DatetimeColumn("Time", format="iso8601"),
+            "time": st.column_config.DatetimeColumn("Time", format="None"),
             "price": st.column_config.NumberColumn("Price", format="dollar"),
             "cost": st.column_config.NumberColumn("Cost", format="dollar"),
             "fee": st.column_config.NumberColumn("Fee", format="dollar"),
