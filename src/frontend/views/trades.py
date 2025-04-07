@@ -32,6 +32,13 @@ def render_trades() -> None:
             "leverage",
             "misc"
             ], inplace=True, errors="ignore")  ### cleanup
+        config = {
+            "time": st.column_config.DatetimeColumn("Time", format="None"),
+            "price": st.column_config.NumberColumn("Price", format="dollar"),
+            "cost": st.column_config.NumberColumn("Cost", format="dollar"),
+            "fee": st.column_config.NumberColumn("Fee", format="dollar"),
+            "vol": st.column_config.NumberColumn("Volume"),
+            }
         st.dataframe(df.head(10),
                     use_container_width=True,
                     column_order=[
@@ -49,6 +56,7 @@ def render_trades() -> None:
                         "base",
                         "pair"                        
                     ],
+                    column_config=config,
                     hide_index=True
                     )
     except Exception as e:

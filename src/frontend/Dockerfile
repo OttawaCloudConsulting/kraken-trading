@@ -1,6 +1,6 @@
 # Use official lightweight Python image
 FROM python:3.11-slim
-LABEL version="1.2.1"
+LABEL version="1.2.2"
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1
