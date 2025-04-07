@@ -24,14 +24,21 @@ def render_trades() -> None:
     st.subheader("Table Preview")
     try:
         df = pd.DataFrame(documents)
-        df.drop(columns=["_id"], inplace=True, errors="ignore")  # Optional cleanup
+        df.drop(columns=[
+            "_id",
+            "postxid",
+            "aclass",
+            "margin",
+            "leverage",
+            "misc"
+            ], inplace=True, errors="ignore")  ### cleanup
         st.dataframe(df.head(10), use_container_width=True)
     except Exception as e:
         st.error(f"Failed to generate table view: {e}")
 
-    # Preview a few records
-    st.subheader("Sample Records")
-    st.json(documents[:5])
+    # # Preview a few records
+    # st.subheader("Sample Records")
+    # st.json(documents[:5])
 
     # Download options
     st.subheader("Download Trade Data")
