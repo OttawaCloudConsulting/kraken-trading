@@ -33,7 +33,7 @@ def render_trades() -> None:
             "misc"
             ], inplace=True, errors="ignore")  ### cleanup
         config = {
-            "time": st.column_config.DatetimeColumn("Time", format="None"),
+            "time": st.column_config.DatetimeColumn("Time", format="iso8601"),
             "price": st.column_config.NumberColumn("Price", format="dollar"),
             "cost": st.column_config.NumberColumn("Cost", format="dollar"),
             "fee": st.column_config.NumberColumn("Fee", format="dollar"),
