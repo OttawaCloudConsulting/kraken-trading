@@ -125,7 +125,8 @@ class KrakenAPIClient:
                     break
 
                 if trade_id not in seen_trade_ids:
-                    trade_data["timestamp"] = normalize_timestamp(trade_data.get("time"))
+                    trade_data["time"] = normalize_timestamp(trade_data.get("time"))  ### Overwrite float with int
+                    trade_data["timestamp"] = trade_data["time"]  ### also keep `timestamp` field
                     all_trades[trade_id] = trade_data
                     seen_trade_ids.add(trade_id)
                     new_trades_added += 1
@@ -234,7 +235,9 @@ class KrakenAPIClient:
                     continue
 
                 if entry_id not in seen_ids:
-                    entry_data["timestamp"] = normalize_timestamp(entry_data.get("time"))
+                    entry_data["time"] = normalize_timestamp(entry_data.get("time"))  # Overwrite float with int
+                    entry_data["timestamp"] = entry_data["time"]  # Optional: also keep `timestamp` field
+
                     all_rewards[entry_id] = entry_data
                     seen_ids.add(entry_id)
                     self.logger.debug("Ledger ID: %s, Timestamp: %s", entry_id, timestamp)
