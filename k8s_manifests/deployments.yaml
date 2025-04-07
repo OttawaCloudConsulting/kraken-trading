@@ -50,14 +50,18 @@ spec:
             initialDelaySeconds: 45
             periodSeconds: 20
             failureThreshold: 6
+            successThreshold: 1
           readinessProbe:
             exec:
               command:
                 - mongosh
                 - --eval
                 - "db.adminCommand('ping')"
-            initialDelaySeconds: 5
+            initialDelaySeconds: 15
             periodSeconds: 10
+            timeoutSeconds: 10
+            failureThreshold: 6
+            successThreshold: 1
       volumes:
         - name: mongodb-storage
           persistentVolumeClaim:
