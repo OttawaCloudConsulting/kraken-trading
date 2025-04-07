@@ -32,13 +32,31 @@ def render_trades() -> None:
             "leverage",
             "misc"
             ], inplace=True, errors="ignore")  ### cleanup
-        st.dataframe(df.head(10), use_container_width=True)
+        st.dataframe(df.head(10),
+                    use_container_width=True,
+                    column_order=[
+                        "time",
+                        "wsname",
+                        "type",
+                        "ordertype",
+                        "price",
+                        "cost",
+                        "fee",
+                        "vol",
+                        "ordertxid",
+                        "trade_id",
+                        "maker",
+                        "base",
+                        "pair"                        
+                    ],
+                    hide_index=True
+                    )
     except Exception as e:
         st.error(f"Failed to generate table view: {e}")
 
-    # # Preview a few records
-    # st.subheader("Sample Records")
-    # st.json(documents[:5])
+    # Preview a few records
+    st.subheader("Sample Records")
+    st.json(documents[:1])
 
     # Download options
     st.subheader("Download Trade Data")
