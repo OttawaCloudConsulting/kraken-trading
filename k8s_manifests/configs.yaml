@@ -23,3 +23,4 @@ data:
   LOG_LEVEL: "debug"
   REPORTS_STORAGE_PATH: "/mnt/reports"
   LOGS_STORAGE_PATH: "/mnt/logs"
+  TRIGGER_CRONJOB_NAME: "kraken-trading-job"
