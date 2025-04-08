@@ -81,7 +81,6 @@ def render_rewards() -> None:
                 mime="application/json",
             )
         else:
-            import pandas as pd
 
             df = pd.DataFrame(documents).drop(columns=["_id"], errors="ignore")
             st.download_button(
