@@ -41,9 +41,9 @@ def render_rewards() -> None:
             ], inplace=True, errors="ignore")  ### cleanup
         config = {
             "time": st.column_config.DatetimeColumn("Time", format="iso8601"),
-            "amount": st.column_config.NumberColumn("Price", format="dollar", step=0.0000000001),
+            "amount": st.column_config.NumberColumn("Price"),
             "balance": st.column_config.NumberColumn("Balance", step=0.0000000001),
-            "fee": st.column_config.NumberColumn("Fee", format="dollar")
+            "fee": st.column_config.NumberColumn("Fee")
             }
         st.dataframe(df.head(10),
                     use_container_width=True,
