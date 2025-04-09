@@ -2,9 +2,9 @@ import streamlit as st
 import pandas as pd
 from utils.mongo_client import MongoDBClient  # ✅ Correct import
 
-def render_trades() -> None:
+def render_alltrades() -> None:
     """Render the Trades view and allow export of data from MongoDB."""
-    st.title("📈 Trade History")
+    st.title("📈 All Trade History")
 
     client = MongoDBClient()
     collection = client.get_collection("kraken_trades")
@@ -24,8 +24,8 @@ def render_trades() -> None:
     st.subheader("Table Preview")
     try:
         df = pd.DataFrame(documents)
-        df["time"] = df["time"].astype(int)  # ⬅️ Ensure int format
-        df["time"] = pd.to_datetime(df["time"], unit="s")  # ⬅️ Convert UNIX timestamp
+        df["time"] = df["time"].astype(int)
+        df["time"] = pd.to_datetime(df["time"], unit="s")
         df.drop(columns=[
             "_id",
             "postxid",
