@@ -24,8 +24,8 @@ def render_trades() -> None:
     st.subheader("Table Preview")
     try:
         df = pd.DataFrame(documents)
-        df["time"] = df["time"].astype(int)  # ⬅️ Ensure int format
-        df["time"] = pd.to_datetime(df["time"], unit="s")  # ⬅️ Convert UNIX timestamp
+        df["time"] = df["time"].astype(int) 
+        df["time"] = pd.to_datetime(df["time"], unit="s")  
         df.drop(columns=[
             "_id",
             "postxid",
@@ -34,6 +34,7 @@ def render_trades() -> None:
             "leverage",
             "misc"
             ], inplace=True, errors="ignore")  ### cleanup
+        df = df.sort_values("time", ascending=False)
         config = {
             "time": st.column_config.DatetimeColumn("Time", format="iso8601"),
             "price": st.column_config.NumberColumn("Price"),
