@@ -20,7 +20,7 @@ def main():
     # Sidebar navigation
     page = st.sidebar.selectbox(
         "Navigate",
-        ("Dashboard", "Trades", "Rewards", "Settings")
+        ("Dashboard", "Trades", "All Trades", "Rewards", "Settings")
     )
 
     # Initialize MongoDB client
