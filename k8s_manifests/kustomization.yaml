@@ -18,11 +18,6 @@ resources:
 - configs.yaml
 - deployments.yaml
 - jobs.yaml
-- fe_deployments.yaml 
-- fe_service.yaml
-- trigger-api-deployment.yaml
-- trigger-api-rbac.yaml
-- trigger_service.yaml
 # - ingress.yaml
 # - network.yaml
 # - observability.yaml

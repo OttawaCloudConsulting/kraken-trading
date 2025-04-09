@@ -1,3 +1,4 @@
+# MongoDB StatefulSet and Service
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -81,81 +82,140 @@ spec:
     - protocol: TCP
       port: 27017
       targetPort: 27017
-# 
-# apiVersion: apps/v1
-# kind: Deployment
-# metadata:
-#   name: flask-app
-#   labels:
-#     app.kubernetes.io/component: backend
-# spec:
-#   replicas: 1
-#   selector:
-#     matchLabels:
-#       app: flask-app
-#   template:
-#     metadata:
-#       labels:
-#         app: flask-app
-#     spec:
-#       serviceAccountName: app-service-account
-#       securityContext:
-#         runAsNonRoot: true
-#         runAsUser: 1000
-#       containers:
-#         - name: flask-app
-#           image: myregistry.com/my-flask-app:latest
-#           ports:
-#             - containerPort: 5000
-#           envFrom:
-#             - configMapRef:
-#                 name: app-config
-#             - secretRef:
-#                 name: app-secrets
-#           volumeMounts:
-#             - name: reports-storage
-#               mountPath: /mnt/reports
-#             - name: logs-storage
-#               mountPath: /mnt/logs
-#           resources:
-#             limits:
-#               memory: "512Mi"
-#               cpu: "500m"
-#             requests:
-#               memory: "256Mi"
-#               cpu: "250m"
-#           livenessProbe:
-#             httpGet:
-#               path: /healthz
-#               port: 5000
-#             initialDelaySeconds: 5
-#             periodSeconds: 10
-#           readinessProbe:
-#             httpGet:
-#               path: /ready
-#               port: 5000
-#             initialDelaySeconds: 5
-#             periodSeconds: 10
-#       volumes:
-#         - name: reports-storage
-#           persistentVolumeClaim:
-#             claimName: reports-pvc
-#         - name: logs-storage
-#           persistentVolumeClaim:
-#             claimName: logs-pvc
-# ---
-# apiVersion: v1
-# kind: Service
-# metadata:
-#   name: flask-service
-#   labels:
-#     app.kubernetes.io/component: backend
-# spec:
-#   type: ClusterIP
-#   selector:
-#     app: flask-app
-#   ports:
-#     - protocol: TCP
-#       port: 5000
-#       targetPort: 5000
-# ---
+---
+# FrontEnd Deployment and Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kraken-frontend
+  labels:
+    app: kraken-frontend
+    app.kubernetes.io/component: frontend-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kraken-frontend
+  template:
+    metadata:
+      labels:
+        app: kraken-frontend
+    spec:
+      containers:
+        - name: streamlit-app
+          image: ghcr.io/ottawacloudconsulting/kraken-trading-web:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8501
+          env:
+            - name: MONGO_USER
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: mongodb-username
+            - name: MONGO_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: mongodb-password
+            - name: DB_NAME
+              value: "kraken_data"
+          volumeMounts:
+            - name: reports-storage
+              mountPath: /app/reports
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+      volumes:
+        - name: reports-storage
+          persistentVolumeClaim:
+            claimName: reports-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kraken-frontend-service
+  labels:
+    app: kraken-frontend
+    app.kubernetes.io/component: frontend-svc
+spec:
+  # type: LoadBalancer
+  type: ClusterIP
+  selector:
+    app: kraken-frontend
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8501
+  # Optional: uncomment to use static IP with MetalLB
+  # loadBalancerIP: 10.40.3.80
+---
+# Triggers Deployment and Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: trigger-api
+  labels:
+    app: trigger-api
+    app.kubernetes.io/component: trigger-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: trigger-api
+  template:
+    metadata:
+      labels:
+        app: trigger-api
+    spec:
+      serviceAccountName: trigger-api-sa
+      containers:
+        - name: trigger-api
+          image: ghcr.io/ottawacloudconsulting/kraken-trigger-api:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8000
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "250m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+          env:
+            - name: TARGET_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: CRONJOB_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: TRIGGER_CRONJOB_NAME
+            - name: LOG_LEVEL
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: LOG_LEVEL
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: trigger-api-service
+  labels:
+    app: trigger-api
+    app.kubernetes.io/component: trigger-svc
+spec:
+  type: ClusterIP
+  selector:
+    app: trigger-api
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 8000

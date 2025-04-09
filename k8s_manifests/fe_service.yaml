@@ -1,18 +1,18 @@
-apiVersion: v1
-kind: Service
-metadata:
-  name: kraken-frontend-service
-  labels:
-    app: kraken-frontend
-    app.kubernetes.io/component: frontend-svc
-spec:
-  # type: LoadBalancer
-  type: ClusterIP
-  selector:
-    app: kraken-frontend
-  ports:
-    - protocol: TCP
-      port: 80
-      targetPort: 8501
-  # Optional: uncomment to use static IP with MetalLB
-  # loadBalancerIP: 10.40.3.80
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: kraken-frontend-service
+#   labels:
+#     app: kraken-frontend
+#     app.kubernetes.io/component: frontend-svc
+# spec:
+#   # type: LoadBalancer
+#   type: ClusterIP
+#   selector:
+#     app: kraken-frontend
+#   ports:
+#     - protocol: TCP
+#       port: 80
+#       targetPort: 8501
+#   # Optional: uncomment to use static IP with MetalLB
+#   # loadBalancerIP: 10.40.3.80
