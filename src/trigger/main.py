@@ -81,10 +81,3 @@ def trigger_sync(response: Response):
         response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
         return {"error": "Unexpected error", "details": str(ex)}
 
-def main():
-    import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=False)
-
-if __name__ == "__main__":
-    main()
-
