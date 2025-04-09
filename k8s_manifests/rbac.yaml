@@ -13,6 +13,7 @@ metadata:
   name: app-role
   labels:
     app.kubernetes.io/component: role
+    rbac.authorization.k8s.io/auditable: "true"
 rules:
   - apiGroups: [""]
     resources: ["pods", "services", "configmaps", "secrets", "persistentvolumeclaims"]
@@ -30,6 +31,7 @@ metadata:
   name: app-rolebinding
   labels:
     app.kubernetes.io/component: rbac
+    rbac.authorization.k8s.io/auditable: "true"
 subjects:
   - kind: ServiceAccount
     name: app-service-account
@@ -56,6 +58,7 @@ metadata:
   labels:
     app: trigger-api
     app.kubernetes.io/component: trigger-api
+    rbac.authorization.k8s.io/auditable: "true"
 rules:
   - apiGroups: ["batch"]
     resources: ["cronjobs"]
@@ -71,6 +74,7 @@ metadata:
   labels:
     app: trigger-api
     app.kubernetes.io/component: trigger-api
+    rbac.authorization.k8s.io/auditable: "true"
 subjects:
   - kind: ServiceAccount
     name: trigger-api-sa

@@ -101,6 +101,7 @@ spec:
       labels:
         app: kraken-frontend
     spec:
+      serviceAccountName: app-service-account
       containers:
         - name: streamlit-app
           image: ghcr.io/ottawacloudconsulting/kraken-trading-web:latest

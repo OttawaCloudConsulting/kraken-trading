@@ -13,6 +13,7 @@ spec:
       backoffLimit: 2
       template:
         spec:
+          serviceAccountName: app-service-account
           restartPolicy: Never
           containers:
             - name: kraken-trading
