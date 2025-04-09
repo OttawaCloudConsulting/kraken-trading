@@ -41,7 +41,8 @@ def render_alltrades() -> None:
             "fee": st.column_config.NumberColumn("Fee"),
             "vol": st.column_config.NumberColumn("Volume"),
             }
-        st.dataframe(use_container_width=True,
+        st.dataframe(df,
+                    use_container_width=True,
                     column_order=[
                         "time",
                         "wsname",
@@ -62,25 +63,3 @@ def render_alltrades() -> None:
                     )
     except Exception as e:
         st.error(f"Failed to generate table view: {e}")
-
-    # Download options
-    st.subheader("Download Trade Data")
-
-    export_format = st.selectbox("Select export format:", ["JSON", "CSV"])
-
-    if st.button("Download"):
-        if export_format == "JSON":
-            st.download_button(
-                label="Download JSON",
-                data=str(documents).encode("utf-8"),
-                file_name="kraken_trades.json",
-                mime="application/json",
-            )
-        else:
-            df = pd.DataFrame(documents).drop(columns=["_id"], errors="ignore")
-            st.download_button(
-                label="Download CSV",
-                data=df.to_csv(index=False),
-                file_name="kraken_trades.csv",
-                mime="text/csv",
-            )
