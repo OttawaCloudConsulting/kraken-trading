@@ -61,7 +61,7 @@ def trigger_sync(response: Response):
                 },
             ),
             spec=client.V1JobSpec(
-                template=cronjob.spec.job_template,
+                template=cronjob.spec.job_template.spec.template,
                 backoff_limit=cronjob.spec.job_template.spec.backoff_limit or 1
             ),
 
