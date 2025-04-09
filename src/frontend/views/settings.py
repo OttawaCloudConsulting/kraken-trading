@@ -14,11 +14,7 @@ def render_settings() -> None:
         "Use the button below to manually trigger the trade and staking reward sync process."
     )
 
-    trigger_url = st.text_input(
-        "Trigger Endpoint URL",
-        placeholder="https://your-api-service/trigger-sync",
-        help="This should point to an endpoint exposed by your backend to trigger sync.",
-    )
+    trigger_url = "http://trigger-api-service/trigger-sync"
 
     if st.button("Update Feeds Now"):
         if not trigger_url:
