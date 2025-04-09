@@ -9,6 +9,7 @@ from views.dashboard import render_dashboard
 from views.trades import render_trades
 from views.rewards import render_rewards
 from views.settings import render_settings
+from views.alltrades import render_alltrades
 
 def main():
 
@@ -34,6 +35,10 @@ def main():
         st.subheader("💹 Trades Viewer")
         st.info("Trades view")
         render_trades()
+    elif page == "All Trades":
+        st.subheader("💹 All Trades Viewer")
+        st.info("All Trades view")
+        render_alltrades()
     elif page == "Rewards":
         st.subheader("🎁 Staking Rewards Viewer")
         st.info("Rewards view")
