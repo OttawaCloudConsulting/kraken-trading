@@ -57,13 +57,14 @@ def trigger_sync(response: Response):
             metadata=client.V1ObjectMeta(
                 name=job_name,
                 labels={
-                    "job-origin": "manual-trigger"
+                    "job-origin": "dashboard-manual-trigger"
                 },
             ),
             spec=client.V1JobSpec(
-                template=cronjob.spec.job_template.spec,
-                backoff_limit=cronjob.spec.job_template.spec.backoff_limit or 1
-            )
+                template=cronjob.spec.job_template,
+                backoff_limit=cronjob.spec.backoff_limit or 1
+            ),
+
         )
 
         # Create the Job in the namespace
