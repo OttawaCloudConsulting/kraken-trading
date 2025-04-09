@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: trigger-api-service
+  labels:
+    app: trigger-api
+    app.kubernetes.io/component: trigger-svc
+spec:
+  type: ClusterIP
+  selector:
+    app: trigger-api
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 8000

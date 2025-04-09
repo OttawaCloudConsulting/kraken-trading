@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: trigger-api-sa
+  labels:
+    app: trigger-api
+    app.kubernetes.io/component: trigger-api
+# imagePullSecrets:
+#   - name: ghcr-pull-kraken
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: trigger-api-role
+  labels:
+    app: trigger-api
+    app.kubernetes.io/component: trigger-api
+rules:
+  - apiGroups: ["batch"]
+    resources: ["cronjobs"]
+    verbs: ["get", "list"]
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: trigger-api-rolebinding
+  labels:
+    app: trigger-api
+    app.kubernetes.io/component: trigger-api
+subjects:
+  - kind: ServiceAccount
+    name: trigger-api-sa
+roleRef:
+  kind: Role
+  name: trigger-api-role
+  apiGroup: rbac.authorization.k8s.io
