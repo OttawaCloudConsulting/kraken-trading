@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from utils.mongo_client import MongoDBClient  # ✅ Correct import
+from utils.mongo_client import MongoDBClient
 
 def render_trades() -> None:
     """Render the Trades view and allow export of data from MongoDB."""
@@ -12,7 +12,6 @@ def render_trades() -> None:
         st.error("Unable to connect to MongoDB or find the 'kraken_trades' collection.")
         return
 
-
     documents = list(collection.find())
     if not documents:
         st.warning("No trade data available in MongoDB.")
@@ -20,7 +19,6 @@ def render_trades() -> None:
 
     st.success(f"Retrieved {len(documents)} trade records.")
 
-    # 👉 Table Preview
     st.subheader("Table Preview")
     try:
         df = pd.DataFrame(documents)
@@ -65,11 +63,9 @@ def render_trades() -> None:
     except Exception as e:
         st.error(f"Failed to generate table view: {e}")
 
-    # Preview a few records
-    st.subheader("Sample Records")
+    st.subheader("Sample Last Record")
     st.json(documents[:1])
 
-    # Download options
     st.subheader("Download Trade Data")
 
     export_format = st.selectbox("Select export format:", ["JSON", "CSV"])

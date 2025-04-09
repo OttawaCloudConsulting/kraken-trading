@@ -13,7 +13,7 @@ def render_dashboard() -> None:
         - Full historical trade records.
         - Staking reward history.
         - CSV/JSON data export.
-        - Trigger-based data synchronization.
+        - Manual data synchronization.
         """
     )
 

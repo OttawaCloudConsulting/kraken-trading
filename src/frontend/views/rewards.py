@@ -31,8 +31,8 @@ def render_rewards() -> None:
     st.subheader("Table Preview")
     try:
         df = pd.DataFrame(documents)
-        df["time"] = df["time"].astype(int)  # ⬅️ Ensure int format
-        df["time"] = pd.to_datetime(df["time"], unit="s")  # ⬅️ Convert UNIX timestamp
+        df["time"] = df["time"].astype(int)
+        df["time"] = pd.to_datetime(df["time"], unit="s")
         df.drop(columns=[
             "_id",
             "aclass",
@@ -63,8 +63,8 @@ def render_rewards() -> None:
         st.error(f"Failed to generate table view: {e}")
 
 
-    # Preview a few records
-    st.subheader("Sample Records")
+    # Record json preview
+    st.subheader("Sample Record")
     st.json(documents[:1])
 
     # Download options

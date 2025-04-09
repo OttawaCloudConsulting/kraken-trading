@@ -5,7 +5,7 @@ from typing import Optional
 from pymongo import MongoClient
 from pymongo.collection import Collection
 from pymongo.database import Database
-from utils.config import mongo_uri  # ✅ Import the central URI builder
+from utils.config import mongo_uri
 
 
 class MongoDBClient:
@@ -13,7 +13,7 @@ class MongoDBClient:
 
     def __init__(self) -> None:
         """Initializes MongoDB client using constructed MongoDB URI."""
-        mongo_connection_uri = mongo_uri()  # ✅ Use central builder
+        mongo_connection_uri = mongo_uri()
         db_name = os.getenv("DB_NAME", "kraken_data")
 
         self.client: MongoClient = MongoClient(mongo_connection_uri)

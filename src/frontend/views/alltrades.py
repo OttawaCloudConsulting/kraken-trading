@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from utils.mongo_client import MongoDBClient  # ✅ Correct import
+from utils.mongo_client import MongoDBClient
 
 def render_alltrades() -> None:
     """Render the Trades view and allow export of data from MongoDB."""
