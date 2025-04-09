@@ -5,8 +5,8 @@ metadata:
   labels:
     app: trigger-api
     app.kubernetes.io/component: trigger-api
-# imagePullSecrets:
-#   - name: ghcr-pull-kraken
+imagePullSecrets:
+  - name: ghcr-pull-kraken
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
