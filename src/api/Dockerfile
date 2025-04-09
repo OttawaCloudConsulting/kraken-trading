@@ -1,5 +1,5 @@
 FROM python:3.11-slim
-LABEL version="0.2.2"
+LABEL version="1.0.0"
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
