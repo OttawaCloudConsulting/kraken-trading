@@ -152,7 +152,7 @@ spec:
     - protocol: TCP
       port: 80
       targetPort: 8501
-  loadBalancerIP: 10.40.3.80
+  loadBalancerIP: 10.40.3.78
 ---
 # Triggers Deployment and Service
 apiVersion: apps/v1
