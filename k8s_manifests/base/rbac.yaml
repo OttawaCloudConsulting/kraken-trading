@@ -1,0 +1,84 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: app-service-account
+  labels:
+    app.kubernetes.io/component: service-account
+imagePullSecrets:
+  - name: ghcr-pull-kraken
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: app-role
+  labels:
+    app.kubernetes.io/component: role
+    rbac.authorization.k8s.io/auditable: "true"
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "services", "configmaps", "secrets", "persistentvolumeclaims"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments", "statefulsets"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["networkpolicies"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: app-rolebinding
+  labels:
+    app.kubernetes.io/component: rbac
+    rbac.authorization.k8s.io/auditable: "true"
+subjects:
+  - kind: ServiceAccount
+    name: app-service-account
+roleRef:
+  kind: Role
+  name: app-role
+  apiGroup: rbac.authorization.k8s.io
+---
+# API Trigger RBAC
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: trigger-api-sa
+  labels:
+    app: trigger-api
+    app.kubernetes.io/component: trigger-api
+imagePullSecrets:
+  - name: ghcr-pull-kraken
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: trigger-api-role
+  labels:
+    app: trigger-api
+    app.kubernetes.io/component: trigger-api
+    rbac.authorization.k8s.io/auditable: "true"
+rules:
+  - apiGroups: ["batch"]
+    resources: ["cronjobs"]
+    verbs: ["get", "list"]
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: trigger-api-rolebinding
+  labels:
+    app: trigger-api
+    app.kubernetes.io/component: trigger-api
+    rbac.authorization.k8s.io/auditable: "true"
+subjects:
+  - kind: ServiceAccount
+    name: trigger-api-sa
+roleRef:
+  kind: Role
+  name: trigger-api-role
+  apiGroup: rbac.authorization.k8s.io

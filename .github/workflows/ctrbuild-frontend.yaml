@@ -1,17 +1,16 @@
-name: Docker Image CI
+name: Frontend Image CI
 
 on:
   push:
     branches: [ "feature/mvp" ]
     paths:
-      - 'src/api/**'
+      - 'src/frontend/**'
   pull_request:
     branches: [ "main" ]
   
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: kraken-trading-api
-  # IMAGE_PATH: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}
+  IMAGE_NAME: kraken-trading-web
 
 jobs:
   build:
@@ -35,7 +34,7 @@ jobs:
 
     - name: Extract version from Dockerfile
       id: version
-      working-directory: src/api
+      working-directory: src/frontend
       run: |
         version=$(grep -i 'LABEL version=' Dockerfile | sed -E 's/.*version="([^"]+)".*/\1/')
         echo "dockerfile_version=$version"
@@ -55,7 +54,7 @@ jobs:
       id: push
       uses: docker/build-push-action@v6
       with:
-        context: src/api
+        context: src/frontend
         push: true
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}

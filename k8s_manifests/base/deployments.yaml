@@ -1,0 +1,221 @@
+# MongoDB StatefulSet and Service
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mongodb
+  labels:
+    app.kubernetes.io/component: backend
+spec:
+  serviceName: mongodb-service
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mongodb
+  template:
+    metadata:
+      labels:
+        app: mongodb
+    spec:
+      containers:
+        - name: mongodb
+          image: mongo:latest
+          ports:
+            - containerPort: 27017
+          env:
+            - name: MONGO_INITDB_ROOT_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: mongodb-username
+            - name: MONGO_INITDB_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: mongodb-password
+          volumeMounts:
+            - name: mongodb-storage
+              mountPath: /data/db
+          resources:
+            limits:
+              memory: "1Gi"
+              cpu: "1000m"
+            requests:
+              memory: "512Mi"
+              cpu: "500m"
+          livenessProbe:
+            exec:
+              command:
+                - mongosh
+                - --eval
+                - "db.adminCommand('ping')"
+            initialDelaySeconds: 45
+            periodSeconds: 20
+            failureThreshold: 6
+            successThreshold: 1
+          readinessProbe:
+            exec:
+              command:
+                - mongosh
+                - --eval
+                - "db.adminCommand('ping')"
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 10
+            failureThreshold: 6
+            successThreshold: 1
+      volumes:
+        - name: mongodb-storage
+          persistentVolumeClaim:
+            claimName: mongodb-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongodb-service
+  labels:
+    app.kubernetes.io/component: backend
+spec:
+  type: ClusterIP
+  selector:
+    app: mongodb
+  ports:
+    - protocol: TCP
+      port: 27017
+      targetPort: 27017
+---
+# FrontEnd Deployment and Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kraken-frontend
+  labels:
+    app: kraken-frontend
+    app.kubernetes.io/component: frontend-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kraken-frontend
+  template:
+    metadata:
+      labels:
+        app: kraken-frontend
+    spec:
+      serviceAccountName: app-service-account
+      containers:
+        - name: streamlit-app
+          image: ghcr.io/ottawacloudconsulting/kraken-trading-web:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8501
+          env:
+            - name: MONGO_USER
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: mongodb-username
+            - name: MONGO_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: mongodb-password
+            - name: DB_NAME
+              value: "kraken_data"
+          volumeMounts:
+            - name: reports-storage
+              mountPath: /app/reports
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+      volumes:
+        - name: reports-storage
+          persistentVolumeClaim:
+            claimName: reports-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kraken-frontend-service
+  labels:
+    app: kraken-frontend
+    app.kubernetes.io/component: frontend-svc
+spec:
+  type: LoadBalancer
+  # type: ClusterIP
+  selector:
+    app: kraken-frontend
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8501
+  loadBalancerIP: 10.40.3.78
+---
+# Triggers Deployment and Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: trigger-api
+  labels:
+    app: trigger-api
+    app.kubernetes.io/component: trigger-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: trigger-api
+  template:
+    metadata:
+      labels:
+        app: trigger-api
+    spec:
+      serviceAccountName: trigger-api-sa
+      containers:
+        - name: trigger-api
+          image: ghcr.io/ottawacloudconsulting/kraken-trigger-api:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8000
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "250m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+          env:
+            - name: TARGET_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: CRONJOB_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: TRIGGER_CRONJOB_NAME
+            - name: LOG_LEVEL
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: LOG_LEVEL
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: trigger-api-service
+  labels:
+    app: trigger-api
+    app.kubernetes.io/component: trigger-svc
+spec:
+  type: ClusterIP
+  selector:
+    app: trigger-api
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 8000

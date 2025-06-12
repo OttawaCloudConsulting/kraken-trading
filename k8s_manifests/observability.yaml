@@ -1,0 +1,85 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: flask-servicemonitor
+  labels:
+    app.kubernetes.io/component: monitoring
+spec:
+  selector:
+    matchLabels:
+      app: flask-app
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 30s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: mongodb-servicemonitor
+  labels:
+    app.kubernetes.io/component: monitoring
+spec:
+  selector:
+    matchLabels:
+      app: mongodb
+  namespaceSelector:
+    matchNames:
+      - app-namespace  # Ensures monitoring occurs within the correct namespace
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 30s
+      honorLabels: true
+      scheme: http
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fluentbit-config
+  labels:
+    app.kubernetes.io/component: logging
+data:
+  fluent-bit.conf: |
+    [SERVICE]
+        Flush        5
+        Log_Level    info
+    
+    [INPUT]
+        Name        tail
+        Path        /mnt/logs/*.log
+        Tag         flask-app
+        Parser      json
+    
+    [OUTPUT]
+        Name        loki
+        Match       *
+        Host        loki
+        Port        3100
+        Labels      job=flask-app
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: fluentbit
+  labels:
+    app.kubernetes.io/component: logging
+spec:
+  selector:
+    matchLabels:
+      name: fluentbit
+  template:
+    metadata:
+      labels:
+        name: fluentbit
+    spec:
+      containers:
+        - name: fluentbit
+          image: fluent/fluent-bit:latest
+          volumeMounts:
+            - name: fluentbit-config
+              mountPath: /fluent-bit/etc/
+      volumes:
+        - name: fluentbit-config
+          configMap:
+            name: fluentbit-config

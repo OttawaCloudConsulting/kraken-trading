@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flask-app
+  labels:
+    app.kubernetes.io/component: healthcheck
+spec:
+  replicas: 1  # Recommended: Define the number of replicas explicitly
+  selector:  # Required: Ensures the Deployment manages the correct pods
+    matchLabels:
+      app: flask-app
+  template:
+    metadata:
+      labels:  # Required: Labels must match the selector
+        app: flask-app
+    spec:
+      containers:
+        - name: flask-app
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 5000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 5000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mongodb
+  labels:
+    app.kubernetes.io/component: healthcheck
+spec:
+  serviceName: mongodb-service  # Required: StatefulSet needs a service for stable networking
+  replicas: 1  # Recommended: Define the number of replicas explicitly
+  selector:  # Required: Ensure StatefulSet manages the correct pods
+    matchLabels:
+      app: mongodb
+  template:
+    metadata:
+      labels:  # Required: Labels must match the selector
+        app: mongodb
+    spec:
+      containers:
+        - name: mongodb
+          livenessProbe:
+            exec:
+              command:
+                - mongosh
+                - --eval
+                - "db.adminCommand('ping')"
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            exec:
+              command:
+                - mongosh
+                - --eval
+                - "db.adminCommand('ping')"
+            initialDelaySeconds: 5
+            periodSeconds: 10

@@ -1,0 +1,54 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-flask-to-mongodb
+  labels:
+    app.kubernetes.io/component: networking
+spec:
+  podSelector:
+    matchLabels:
+      app: mongodb
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: flask-app
+      ports:
+        - protocol: TCP
+          port: 27017
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: restrict-mongodb-external-access
+  labels:
+    app.kubernetes.io/component: networking
+spec:
+  podSelector:
+    matchLabels:
+      app: mongodb
+  policyTypes:
+    - Ingress
+  ingress: [] # Denies all external access to MongoDB
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ingress-flask
+  labels:
+    app.kubernetes.io/component: networking
+spec:
+  podSelector:
+    matchLabels:
+      app: flask-app
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - ipBlock:
+            cidr: 0.0.0.0/0 # Allow public access to Flask
+      ports:
+        - protocol: TCP
+          port: 5000
